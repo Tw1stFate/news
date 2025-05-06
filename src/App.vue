@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <layout-editor />
+    <main-layout></main-layout>
   </div>
 </template>
 
 <script>
-import LayoutEditor from './views/LayoutEditor.vue';
+import MainLayout from '@/layouts/MainLayout.vue';
 
 export default {
   name: 'App',
   components: {
-    LayoutEditor
+    MainLayout
   }
 };
 </script>
@@ -24,10 +24,10 @@ html, body {
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  height: 100vh;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-  height: 100%;
 }
 </style>

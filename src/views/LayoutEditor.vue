@@ -90,15 +90,15 @@
                   </template>
 
                   <div class="add-widget-placeholder" :class="{ 'is-column-empty': !column.widgets || column.widgets.length === 0 }">
-                    <el-dropdown @command="(type) => handleAddWidget(rowIndex, colIndex, type)" trigger="click">
+                    <el-dropdown @command="(widgetId) => handleAddWidget(rowIndex, colIndex, widgetId)" trigger="click">
                       <el-button type="primary" plain size="small" icon="el-icon-plus">
                         {{ !column.widgets || column.widgets.length === 0 ? '添加第一个组件' : '添加更多组件' }}
                       </el-button>
                       <el-dropdown-menu slot="dropdown">
                         <el-dropdown-item v-for="widget in availableWidgets"
-                                        :key="widget.type"
-                                        :command="widget.type">
-                          <i :class="widget.icon"></i> {{ widget.name }}
+                                        :key="widget.id"
+                                        :command="widget.id">
+                          <i :class="getWidgetIcon(widget.type)"></i> {{ widget.name }}
                         </el-dropdown-item>
                       </el-dropdown-menu>
                     </el-dropdown>
@@ -139,16 +139,85 @@ import WidgetRegistry from '@/services/widget-registry';
 import HeadlineWidget from '@/components/widgets/HeadlineWidget.vue';
 import NewsListWidget from '@/components/widgets/NewsListWidget.vue';
 import ImageNewsWidget from '@/components/widgets/ImageNewsWidget.vue';
-import CarouselWidget from '@/components/widgets/CarouselWidget.vue';
+import CarouselWidget1 from '@/components/widgets/CarouselWidget1.vue';
+import CarouselWidget2 from '@/components/widgets/CarouselWidget2.vue';
 import HotNewsWidget from '@/components/widgets/HotNewsWidget.vue';
 import api from '@/services/api';
 
 // 注册可用的组件
-WidgetRegistry.register('headline', HeadlineWidget);
-WidgetRegistry.register('news-list', NewsListWidget);
-WidgetRegistry.register('image-news', ImageNewsWidget);
-WidgetRegistry.register('carousel', CarouselWidget);
-WidgetRegistry.register('hot-news', HotNewsWidget);
+WidgetRegistry.register('headline', {
+  name: '头条新闻',
+  icon: 'el-icon-news',
+  component: HeadlineWidget,
+  defaultConfig: {
+    titleStyle: 'large',
+    count: 5,
+    channelId: ''
+  }
+});
+
+WidgetRegistry.register('news-list', {
+  name: '新闻列表',
+  icon: 'el-icon-document',
+  component: NewsListWidget,
+  defaultConfig: {
+    titleStyle: 'medium',
+    count: 10,
+    showImage: true,
+    channelId: ''
+  }
+});
+
+WidgetRegistry.register('image-news', {
+  name: '图片新闻',
+  icon: 'el-icon-picture-outline',
+  component: ImageNewsWidget,
+  defaultConfig: {
+    layout: 'grid',
+    count: 6,
+    channelId: ''
+  }
+});
+
+WidgetRegistry.register('carousel-1', {
+  name: '轮播图样式1',
+  icon: 'el-icon-picture',
+  component: CarouselWidget1,
+  defaultConfig: {
+    height: 300,
+    autoplay: true,
+    interval: 5000,
+    indicatorPosition: 'bottom-left',
+    activeIndicatorWidth: 20,
+    showTitle: true,
+    titlePosition: 'bottom-right',
+    channelId: ''
+  }
+});
+
+WidgetRegistry.register('carousel-2', {
+  name: '轮播图样式2',
+  icon: 'el-icon-picture',
+  component: CarouselWidget2,
+  defaultConfig: {
+    height: 240,
+    autoplay: false,
+    interval: 0,
+    showTitle: true,
+    channelId: ''
+  }
+});
+
+WidgetRegistry.register('hot-news', {
+  name: '热点排行',
+  icon: 'el-icon-trophy',
+  component: HotNewsWidget,
+  defaultConfig: {
+    count: 10,
+    showNumber: true,
+    channelId: ''
+  }
+});
 
 export default {
   name: 'LayoutEditor',
@@ -157,7 +226,8 @@ export default {
     HeadlineWidget,
     NewsListWidget,
     ImageNewsWidget,
-    CarouselWidget,
+    CarouselWidget1,
+    CarouselWidget2,
     HotNewsWidget
   },
   data() {
@@ -172,14 +242,18 @@ export default {
   },
   computed: {
     ...mapState('layout', ['currentEditingWidget']),
-    ...mapGetters('layout', ['getLayout', 'getAvailableWidgets']),
+    ...mapState('widget', ['widgets']),
+    ...mapGetters('layout', ['getLayout']),
     
     layout() {
       return this.getLayout;
     },
     
     availableWidgets() {
-      return this.getAvailableWidgets;
+      return this.widgets.map(widget => ({
+        ...widget,
+        icon: this.getWidgetIcon(widget.type)
+      }));
     }
   },
   methods: {
@@ -194,6 +268,7 @@ export default {
       'saveLayout',
       'loadDefaultLayout'
     ]),
+    ...mapActions('widget', ['fetchWidgets']),
     
     getWidgetComponent(type) {
       return WidgetRegistry.get(type);
@@ -388,12 +463,30 @@ export default {
       this.isEditingWidget = null;
     },
     
-    handleAddWidget(rowIndex, colIndex, widgetType) {
-      console.log('Adding widget:', { rowIndex, colIndex, widgetType }); // 添加调试日志
-      this.$store.dispatch('layout/addWidget', { rowIndex, colIndex, widgetType });
+    getWidgetIcon(type) {
+      const types = WidgetRegistry.getTypes();
+      const widget = types.find(w => w.type === type);
+      return widget ? widget.icon : 'el-icon-question';
+    },
+    
+    async handleAddWidget(rowIndex, colIndex, widgetId) {
+      const widget = this.widgets.find(w => w.id === widgetId);
+      if (widget) {
+        await this.$store.dispatch('layout/addWidget', {
+          rowIndex,
+          colIndex,
+          widget: {
+            ...widget,
+            id: this.generateId()
+          }
+        });
+      }
     }
   },
   created() {
+    // 加载组件数据
+    this.fetchWidgets();
+    
     // 初始化，如果布局为空则添加一个默认行
     if (!this.layout.rows || this.layout.rows.length === 0) {
       this.addRow();
