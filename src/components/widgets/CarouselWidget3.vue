@@ -34,7 +34,7 @@
               class="title-item"
               :class="{ active: currentIndex === index }"
               @click="setActiveItem(index)"
-              @mouseenter="mouseEnterHandler(index)"
+              @mouseenter="mouseEnterHandler(index, $event)"
             >
               <div class="title-content">
                 <span class="title-text">{{ item.title }}</span>
@@ -86,9 +86,11 @@ export default {
       this.currentIndex = index;
       this.$refs.carousel.setActiveItem(index);
     },
-    mouseEnterHandler(index) {
+    mouseEnterHandler(index, event) {
       // 悬停在标题上时自动切换到对应的图片
       if (this.currentIndex !== index) {
+        // 阻止事件冒泡，避免引起其他不必要的行为
+        if (event) event.preventDefault();
         this.setActiveItem(index);
       }
     }

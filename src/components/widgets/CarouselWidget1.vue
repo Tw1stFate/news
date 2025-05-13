@@ -25,7 +25,7 @@
             :key="index"
             class="indicator"
             :class="{ active: currentIndex === index }"
-            @click="setActiveItem(index)"
+            @click="setActiveItem(index, $event)"
           ></span>
         </div>
 
@@ -72,7 +72,9 @@ export default {
     handleChange(index) {
       this.currentIndex = index;
     },
-    setActiveItem(index) {
+    setActiveItem(index, event) {
+      // 阻止事件冒泡，避免引起其他不必要的行为
+      if (event) event.preventDefault();
       this.currentIndex = index;
       this.$refs.carousel.setActiveItem(index);
     }

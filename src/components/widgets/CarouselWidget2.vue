@@ -106,10 +106,14 @@ export default {
         
         // 检查缩略图是否在可视区域内
         if (thumbRect.top < containerRect.top || thumbRect.bottom > containerRect.bottom) {
-          activeThumb.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-          });
+          // 使用自定义滚动而不是scrollIntoView，避免触发页面滚动
+          if (thumbRect.top < containerRect.top) {
+            // 向上滚动
+            container.scrollTop += (thumbRect.top - containerRect.top - 8);
+          } else {
+            // 向下滚动
+            container.scrollTop += (thumbRect.bottom - containerRect.bottom + 8);
+          }
         }
       }
     }

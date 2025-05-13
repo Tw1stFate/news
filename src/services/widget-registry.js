@@ -4,6 +4,8 @@ import CarouselWidget3 from '@/components/widgets/CarouselWidget3.vue';
 import HeadlineWidget from '@/components/widgets/HeadlineWidget.vue';
 import NewsListWidget from '@/components/widgets/NewsListWidget.vue';
 import NewsListWidget1 from '@/components/widgets/NewsListWidget1.vue';
+import NewsListWidget2 from '@/components/widgets/NewsListWidget2.vue';
+import NewsListWidget3 from '@/components/widgets/NewsListWidget3.vue';
 import ImageNewsWidget from '@/components/widgets/ImageNewsWidget.vue';
 import HotNewsWidget from '@/components/widgets/HotNewsWidget.vue';
 
@@ -15,7 +17,8 @@ const carouselData = [
     image: 'https://picsum.photos/800/400?random=1',
     thumbnail: 'https://picsum.photos/800/400?random=1&w=120&h=80',
     date: '2024-01-15',
-    link: '#'
+    link: '#',
+    summary: '近日，我国航天事业再次取得重大突破，成功发射新一代运载火箭，这将为我国空间站计划提供有力支持。'
   },
   {
     id: 2,
@@ -23,7 +26,8 @@ const carouselData = [
     image: 'https://picsum.photos/800/400?random=2',
     thumbnail: 'https://picsum.photos/800/400?random=2&w=120&h=80',
     date: '2024-01-15',
-    link: '#'
+    link: '#',
+    summary: '第二届数字中国建设峰会在福建福州开幕，来自全国各地的专家学者和企业家共同探讨数字经济发展前景。'
   },
   {
     id: 3,
@@ -31,7 +35,8 @@ const carouselData = [
     image: 'https://picsum.photos/800/400?random=3',
     thumbnail: 'https://picsum.photos/800/400?random=3&w=120&h=80',
     date: '2024-01-15',
-    link: '#'
+    link: '#',
+    summary: '以"数字赋能未来，合作创造机遇"为主题的2023世界互联网大会在浙江乌镇举行，聚焦全球数字合作。'
   },
   {
     id: 4,
@@ -39,7 +44,8 @@ const carouselData = [
     image: 'https://picsum.photos/800/400?random=4',
     thumbnail: 'https://picsum.photos/800/400?random=4&w=120&h=80',
     date: '2024-01-15',
-    link: '#'
+    link: '#',
+    summary: '国务院发布《关于促进科技创新支撑引领经济高质量发展的若干政策措施》，从多个方面支持科技创新。'
   },
   {
     id: 5,
@@ -47,7 +53,8 @@ const carouselData = [
     image: 'https://picsum.photos/800/400?random=5',
     thumbnail: 'https://picsum.photos/800/400?random=5&w=120&h=80',
     date: '2024-01-15',
-    link: '#'
+    link: '#',
+    summary: '截至2023年底，我国新能源汽车保有量超过1300万辆，产业链各环节技术水平显著提升，市场竞争力不断增强。'
   }
 ];
 
@@ -129,6 +136,53 @@ const widgetTypes = {
       title: '党建引领',
       count: 6,
       showDate: true,
+      items: mockData.newsList
+    }
+  },
+  'news-list-2': {
+    name: '列表样式2',
+    icon: 'el-icon-document',
+    component: NewsListWidget2,
+    defaultConfig: {
+      height: 330,
+      title: '行务要闻',
+      count: 7,
+      showDate: true,
+      items: mockData.newsList
+    }
+  },
+  'news-list-3': {
+    name: '列表样式3',
+    icon: 'el-icon-document',
+    component: NewsListWidget3,
+    defaultConfig: {
+      height: 400,
+      title: '双轻业务',
+      count: 4,
+      items: mockData.newsList
+    }
+  },
+  'news-list-4': {
+    name: '列表样式4',
+    icon: 'el-icon-document',
+    component: NewsListWidget,
+    defaultConfig: {
+      height: 400,
+      titleStyle: 'medium',
+      count: 10,
+      showImage: true,
+      items: mockData.newsList
+    }
+  },
+  'news-list-5': {
+    name: '列表样式5',
+    icon: 'el-icon-document',
+    component: NewsListWidget,
+    defaultConfig: {
+      height: 360,
+      titleStyle: 'medium',
+      count: 8,
+      showImage: false,
       items: mockData.newsList
     }
   },
@@ -214,6 +268,31 @@ const defaultWidgets = [
   {
     id: 'news-list-2',
     name: '列表样式2',
+    type: 'news-list-2',
+    description: '简洁标题日期列表',
+    config: {
+      height: 330,
+      title: '行务要闻',
+      count: 7,
+      showDate: true,
+      items: mockData.newsList
+    }
+  },
+  {
+    id: 'news-list-3',
+    name: '列表样式3',
+    type: 'news-list-3',
+    description: '图文列表',
+    config: {
+      height: 400,
+      title: '双轻业务',
+      count: 4,
+      items: mockData.newsList
+    }
+  },
+  {
+    id: 'news-list-4',
+    name: '列表样式4',
     type: 'news-list',
     description: '图文混排列表',
     config: {
@@ -225,8 +304,8 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'news-list-3',
-    name: '列表样式3',
+    id: 'news-list-5',
+    name: '列表样式5',
     type: 'news-list',
     description: '纯文字列表',
     config: {
