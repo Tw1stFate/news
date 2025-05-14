@@ -28,30 +28,56 @@ const PreviewNode = {
     }
   },
   data() {
-    return {
-      // 如果需要可以添加状态
-    };
+    return {};
   },
   methods: {
     // 根据组件类型获取对应的组件
     getWidgetComponent(type) {
-      return WidgetRegistry.get(type);
+      const component = WidgetRegistry.get(type);
+      console.log(`获取组件 ${type}:`, component ? 'Success' : 'Not Found');
+      return component;
+    },
+    
+    // 检查节点是否为叶子节点（没有子节点）
+    isLeafNode() {
+      return !this.node.children || this.node.children.length === 0;
     }
   },
   render(h) {
-    // 渲染叶子节点（包含组件的节点）
-    if (this.node.widget) {
-      return h('div', { class: 'preview-widget' }, [
-        h(this.getWidgetComponent(this.node.widget.type), {
-          props: {
-            config: this.node.widget.config || {}
-          },
-          class: 'widget-component'
-        })
-      ]);
+    // 打印节点信息，帮助调试
+    console.log('渲染节点:', JSON.stringify({
+      id: this.node.id,
+      type: this.node.type,
+      hasWidget: !!this.node.widget,
+      hasChildren: !!(this.node.children && this.node.children.length),
+      widgetType: this.node.widget && this.node.widget.type
+    }));
+    
+    // 如果节点有组件配置，优先渲染组件
+    if (this.node.widget && this.node.widget.type) {
+      try {
+        const widgetComponent = this.getWidgetComponent(this.node.widget.type);
+        if (!widgetComponent) {
+          console.error('找不到组件类型:', this.node.widget.type);
+          return h('div', { class: 'preview-widget error' }, `组件类型无效: ${this.node.widget.type}`);
+        }
+        
+        return h('div', { class: 'preview-widget' }, [
+          h(widgetComponent, {
+            props: {
+              config: this.node.widget.config || {},
+              channelId: this.node.channelId || null
+            },
+            class: 'widget-component'
+          })
+        ]);
+      } catch (e) {
+        console.error('渲染组件错误:', e);
+        return h('div', { class: 'preview-widget error' }, `渲染错误: ${e.message}`);
+      }
     }
     
-    // 无子节点时显示空容器
+    // 无子节点的空容器
     if (!this.node.children || this.node.children.length === 0) {
       return h('div', { 
         class: ['preview-empty-node', `preview-${this.node.type}`]
@@ -248,5 +274,19 @@ export default {
   background-color: #f9f9f9;
   border-radius: 4px;
   margin: 20px 0;
+}
+
+.preview-widget.error {
+  background-color: #fef0f0;
+  color: #f56c6c;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid #fbc4c4;
+  border-radius: 4px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
 }
 </style> 

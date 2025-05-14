@@ -3,7 +3,7 @@
     <el-header height="60px" class="editor-header">
       <div class="header-controls">
         <div class="left-area">
-          <h2>新闻门户布局编辑器</h2>
+        <h2>新闻门户布局编辑器</h2>
         </div>
         <div class="right-area">
           <el-button-group class="action-group">
@@ -47,8 +47,8 @@
                   @add-column="handleAddColumn"
                   @delete-node="handleDeleteNode"
                   @select-widget="handleSelectWidget" />
-              </div>
-              
+            </div>
+
               <!-- 初始化后添加行布局按钮 -->
               <div class="add-layout-controls">
                 <el-button type="primary" icon="el-icon-plus" @click="addRootRow">添加行布局</el-button>
@@ -57,7 +57,7 @@
           </div>
         </template>
       </div>
-    </div>
+                      </div>
 
     <!-- 组件选择对话框 -->
     <el-dialog
@@ -75,19 +75,19 @@
                 :class="{ 'is-selected': selectedWidgetId === widget.id }"
                 @click.native="selectWidget(widget)">
                 <div class="preview-area">
-                  <component 
-                    :is="getWidgetComponent(widget.type)"
+                      <component 
+                        :is="getWidgetComponent(widget.type)"
                     :config="widget.config"
                     class="preview-component" />
-                </div>
+                    </div>
                 <div class="widget-info text-center">
                   <h4>{{ widget.name }}</h4>
-                </div>
+                  </div>
               </el-card>
-            </el-col>
-          </el-row>
+              </el-col>
+            </el-row>
+          </div>
         </div>
-      </div>
       <div slot="footer" class="dialog-footer">
         <div class="channel-selection" v-if="selectedWidgetId">
           <span>关联栏目：</span>
@@ -112,16 +112,17 @@
       width="30%">
       <el-form :model="newLayoutProps" label-width="100px">
         <el-form-item label="布局比例" prop="ratios">
-          <el-input v-model="newLayoutProps.ratios" :placeholder="newLayoutType === 'row' ? '可选，例如: 1:2 表示1:2高度比' : '例如: 5:5 表示等宽两列'">
+          <el-input v-model="newLayoutProps.ratios" :placeholder="newLayoutType === 'row' ? '可选，例如: 1:1 或 1:2:1' : '例如: 1:1 或 2:3:1'">
             <template slot="append">
-              <el-tooltip :content="newLayoutType === 'row' ? '多行以冒号分隔，如1:2表示1/3和2/3的两行布局' : '多列以冒号分隔，如3:7表示30%和70%的两列布局'" placement="top">
+              <el-tooltip :content="newLayoutType === 'row' ? '用冒号分隔各行的高度比例，如1:1表示两个等高行，1:2:1表示三行(25%,50%,25%)' : '用冒号分隔各列的宽度比例，如1:1表示两个等宽列，2:5:3表示三列(20%,50%,30%)'" placement="top">
                 <i class="el-icon-question"></i>
               </el-tooltip>
             </template>
           </el-input>
-          <div class="form-item-tip" v-if="newLayoutType === 'row'">
-            留空表示添加单个行
-          </div>
+          <div class="form-item-tip">
+            <span v-if="newLayoutType === 'row'">留空表示添加单个行，输入比例如1:1将创建多个行</span>
+            <span v-else>输入比例如1:1将创建两个等宽列，1:2表示宽度比为1:2的两列</span>
+        </div>
         </el-form-item>
         <el-form-item label="高度" prop="height">
           <el-input v-model="newLayoutProps.height" placeholder="可选，如200px">
@@ -154,7 +155,7 @@
         </div>
         <el-button type="primary" size="small" @click="hidePreview">返回编辑</el-button>
       </div>
-      <layout-preview :layout-tree="rootNode" />
+      <layout-preview :layout-tree="previewLayoutTree" />
     </el-dialog>
   </div>
 </template>
@@ -185,7 +186,9 @@ const LayoutNode = {
   },
   data() {
     return {
-      isHovered: false
+      isHovered: false,
+      // 如果是叶子节点，强制显示
+      forceVisible: !this.node.children || this.node.children.length === 0
     };
   },
   computed: {
@@ -195,8 +198,12 @@ const LayoutNode = {
     nodeTypeLabel() {
       return this.node.type === 'row' ? '行布局' : '列布局';
     },
+    shouldShowContent() {
+      // 如果是叶子节点或者有组件，始终显示内容
+      return this.isLeafNode || this.node.widget;
+    },
     layoutInfoText() {
-      const { type, span, height } = this.node;
+      const { type, span, height, percentWidth } = this.node;
       if (type === 'row') {
         let info = '宽度: 100%';
         if (height) {
@@ -204,7 +211,7 @@ const LayoutNode = {
         }
         return info;
       } else if (type === 'column') {
-        let info = `宽度: ${span || 1}/10`;
+        let info = percentWidth ? `宽度: ${percentWidth}` : `宽度: ${span || 1}/10`;
         if (height) {
           info += `, 高度: ${height}`;
         }
@@ -233,13 +240,14 @@ const LayoutNode = {
       this.$emit('select-widget', this.node.id);
     },
     showLayoutInfo() {
-      const { type, span, height } = this.node;
+      const { type, span, height, percentWidth } = this.node;
       let message = '';
       
       if (type === 'row') {
         message = `行布局: 宽度占满(100%)${height ? `，高度: ${height}` : '，高度自适应'}`;
       } else if (type === 'column') {
-        message = `列布局: 相对宽度 ${span || 1}/10 (${Math.round((span || 1) * 10)}%)${height ? `，高度: ${height}` : '，高度占满'}`;
+        const widthText = percentWidth || `${Math.round((span || 1) * 10)}%`;
+        message = `列布局: 宽度 ${widthText}${height ? `，高度: ${height}` : '，高度占满'}`;
       }
       
       this.$root.$message.info(message);
@@ -266,10 +274,6 @@ const LayoutNode = {
         ? 'column-container' // 如果行布局中有列节点，使用列容器样式
         : (this.node.type === 'row' ? 'row-container' : 'column-container');
         
-      // 检查子节点类型
-      // const childrenTypes = this.node.children.map(child => child.type);
-      // const allColumns = childrenTypes.every(type => type === 'column');
-        
       return h('div', { 
         class: containerClass,
         style: {
@@ -289,8 +293,9 @@ const LayoutNode = {
               depth: this.depth + 1
             },
             style: child.type === 'column' ? {
-              flex: `${child.span} 0 0`,
-              minWidth: `${child.span * 10}%`
+              flex: child.percentWidth ? `0 0 ${child.percentWidth}` : `${child.span} 0 0`,
+              width: child.percentWidth || `${child.span * 10}%`,
+              minWidth: child.percentWidth || `${child.span * 10}%`
             } : {},
             on: {
               'add-row': parentId => this.$emit('add-row', parentId),
@@ -305,6 +310,8 @@ const LayoutNode = {
 
     // 叶子节点的内容
     const renderLeafContent = () => {
+      console.log('渲染叶子节点:', this.node.id, '有组件?', !!this.node.widget);
+      
       if (this.node.widget) {
         return h('div', { class: 'node-widget' }, [
           h('div', { class: 'widget-info' }, [
@@ -315,7 +322,8 @@ const LayoutNode = {
             // 渲染实际组件
             h(this.getWidgetComponent(this.node.widget.type), {
               props: {
-                config: this.node.widget.config || {}
+                config: this.node.widget.config || {},
+                channelId: this.node.channelId
               },
               class: 'preview-component'
             })
@@ -373,34 +381,6 @@ const LayoutNode = {
         );
       }
       
-      // 如果是叶子节点，显示选择组件按钮
-      if (this.isLeafNode) {
-        buttons.push(
-          h('el-button', {
-            props: { 
-              type: 'success',
-              size: 'mini',
-              icon: 'el-icon-plus'
-            },
-            on: { click: this.selectWidget }
-          }, '选择组件')
-        );
-      }
-      
-      // 显示布局信息按钮
-      if (this.node.type !== 'container') {
-        buttons.push(
-          h('el-button', {
-            props: {
-              type: 'info',
-              size: 'mini',
-              icon: 'el-icon-info'
-            },
-            on: { click: this.showLayoutInfo }
-          })
-        );
-      }
-      
       // 不是根节点时才显示删除按钮
       if (!this.isRoot) {
         buttons.push(
@@ -417,7 +397,9 @@ const LayoutNode = {
       
       return h('div', { 
         class: 'node-controls',
-        directives: [{ name: 'show', value: this.isHovered }]
+        style: {
+          display: this.isHovered ? 'flex' : 'none'
+        }
       }, buttons);
     };
 
@@ -436,10 +418,17 @@ const LayoutNode = {
       nodeStyle.width = this.node.width;
     }
     
-    // 列节点宽度样式（通过flex实现）
-    if (this.node.type === 'column' && this.node.span) {
-      nodeStyle.flex = `${this.node.span} 0 0%`;
-      nodeStyle.minWidth = `${this.node.span * 10}%`;
+    // 列节点宽度样式
+    if (this.node.type === 'column') {
+      if (this.node.percentWidth) {
+        // 使用精确的百分比宽度
+        nodeStyle.width = this.node.percentWidth;
+        nodeStyle.flex = `0 0 ${this.node.percentWidth}`;
+      } else if (this.node.span) {
+        // 向后兼容，为老数据使用span
+        nodeStyle.flex = `${this.node.span} 0 0%`;
+        nodeStyle.width = `${this.node.span * 10}%`;
+      }
       // 防止列被挤压
       nodeStyle.flexShrink = "0";
     }
@@ -451,8 +440,22 @@ const LayoutNode = {
 
     // 创建布局节点
     return h('div', { 
-      class: ['layout-node', `node-${this.node.type}`, `depth-${this.depth}`, { 'is-hovered': this.isHovered }],
-      style: nodeStyle,
+      class: [
+        'layout-node', 
+        `node-${this.node.type}`, 
+        `depth-${this.depth}`, 
+        { 
+          'is-hovered': this.isHovered,
+          'is-leaf': this.isLeafNode,
+          'has-widget': !!this.node.widget
+        }
+      ],
+      style: {
+        ...nodeStyle,
+        // 添加一些额外的样式确保显示
+        position: 'relative',
+        display: 'block'
+      },
       on: {
         mouseenter: this.handleMouseEnter,
         mouseleave: this.handleMouseLeave
@@ -466,15 +469,27 @@ const LayoutNode = {
               : 'el-icon-s-grid'
           }),
           h('span', { 
-            class: this.node.type === 'row' ? 'row-label' : 'column-label' 
+            class: this.node.type === 'row' ? 'row-label' : 'column-label',
+            on: { click: this.showLayoutInfo }
           }, this.nodeTypeLabel),
           this.layoutInfoText 
-            ? h('span', { class: 'layout-info' }, `(${this.layoutInfoText})`) 
+            ? h('span', { 
+                class: 'layout-info',
+                on: { click: this.showLayoutInfo }
+              }, `(${this.layoutInfoText})`) 
             : null
         ]),
         renderNodeControls()
       ]),
-      h('div', { class: 'node-content' }, [
+      h('div', { 
+        class: 'node-content',
+        style: {
+          // 关键修改：强制组件内容区域始终显示
+          display: 'block !important',
+          visibility: 'visible !important',
+          opacity: 1
+        }
+      }, [
         this.isLeafNode ? renderLeafContent() : renderChildren()
       ])
     ]);
@@ -502,7 +517,8 @@ export default {
         ratios: '',
         height: ''
       },
-      previewDialogVisible: false
+      previewDialogVisible: false,
+      previewLayoutTree: null
     };
   },
   computed: {
@@ -664,19 +680,53 @@ export default {
         return;
       }
       
+      // 先关闭对话框，避免UI阻塞
+      this.widgetDialogVisible = false;
+      
+      // 使用Vue.set确保响应式更新
       const node = this.findNodeById(this.rootNode, this.selectedNodeId);
       if (node) {
         const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
+        if (!widget) {
+          this.$message.error('选择的组件无效');
+          return;
+        }
+        
+        // 验证组件类型是否可用
+        const component = WidgetRegistry.get(widget.type);
+        if (!component) {
+          this.$message.error(`组件类型 "${widget.type}" 未注册，无法使用`);
+          return;
+        }
+        
         const channel = this.channels.find(c => c.id === this.selectedChannelId);
         
-        node.widget = { ...widget };
-        node.channelId = this.selectedChannelId;
-        node.channelName = channel ? channel.name : '';
+        // 深拷贝组件对象
+        const widgetCopy = JSON.parse(JSON.stringify(widget));
+        console.log('保存组件数据:', widgetCopy);
         
-        this.saveLayoutTree(this.rootNode); // 保存修改后的布局
+        // 使用Vue的响应式更新机制
+        this.$set(node, 'widget', widgetCopy);
+        this.$set(node, 'channelId', this.selectedChannelId);
+        this.$set(node, 'channelName', channel ? channel.name : '');
+        this.$set(node, 'hasWidget', true);  // 明确标记有组件
+        
+        // 创建新的根节点引用来触发完整更新
+        const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
+        
+        // 更新本地状态
+        this.rootNode = null; // 先设为null强制刷新
+        this.$nextTick(() => {
+          this.rootNode = newRootNode;
+          
+          // 保存到vuex
+          console.log('保存到布局树:', newRootNode);
+          this.saveLayoutTree(newRootNode);
+          
+          // 显示成功消息
+          this.$message.success('组件关联成功');
+        });
       }
-      
-      this.widgetDialogVisible = false;
     },
     
     // 通过ID查找节点
@@ -771,7 +821,7 @@ export default {
         this.$message.error('导出失败: ' + error.message);
       }
     },
-    
+
     // 新增：显示布局属性设置对话框
     showLayoutPropsDialog(layoutType, parentId) {
       this.layoutPropsDialogVisible = true;
@@ -781,12 +831,12 @@ export default {
       // 为不同布局类型设置合适的默认值
       if (layoutType === 'row') {
         this.newLayoutProps = {
-          ratios: '', // 行布局也可以设置比例
+          ratios: '', // 行布局默认不设置比例
           height: ''
         };
       } else {
         this.newLayoutProps = {
-          ratios: '5:5', // 默认等宽两列
+          ratios: '1:1', // 默认等宽两列
           height: ''
         };
       }
@@ -859,29 +909,37 @@ export default {
           // 确保有比例设置
           if (ratios && ratios.includes(':')) {
             // 解析列布局比例
-            const ratioArray = ratios.split(':').map(r => parseInt(r.trim()));
+            const ratioArray = ratios.split(':').map(r => parseInt(r.trim()) || 1); // 默认使用1，防止无效输入
             const totalRatio = ratioArray.reduce((sum, r) => sum + r, 0);
             
             // 创建多列
             for (let i = 0; i < ratioArray.length; i++) {
               const ratio = ratioArray[i];
-              const span = Math.round((ratio / totalRatio) * 10); // 计算每列的宽度比例
+              // 计算百分比比例，然后转换为0-10的span值
+              // 例如: 1:1:1 => 33.33% => span约为3.33，四舍五入为3
+              const percent = (ratio / totalRatio) * 100;
+              const span = Math.round((ratio / totalRatio) * 10);
               
               parent.children.push({
                 id: uuidv4(),
                 type: 'column',
                 span, // 宽度比例
+                percentWidth: `${percent.toFixed(2)}%`, // 存储精确的百分比，便于展示
                 height: height || '100%', // 如果未设置高度，则占满父容器高度
                 parent: parentId,
                 children: []
               });
             }
+            
+            // 校正span总和为10
+            this.adjustColumnSpans(parent.children);
           } else {
             // 无比例设置，默认添加一个全宽的列
             parent.children.push({
               id: uuidv4(),
               type: 'column',
               span: 10, // 满宽度
+              percentWidth: '100%',
               height: height || '100%',
               parent: parentId,
               children: []
@@ -910,12 +968,87 @@ export default {
         this.$message.warning('布局为空，请先创建布局');
         return;
       }
+      
+      // 检查布局中是否有组件
+      const hasWidgets = this.checkForWidgets(this.rootNode);
+      console.log('准备预览，布局中包含组件:', hasWidgets);
+      console.log('预览布局树:', JSON.stringify(this.rootNode, null, 2));
+      
+      this.previewLayoutTree = JSON.parse(JSON.stringify(this.rootNode));
       this.previewDialogVisible = true;
+    },
+
+    // 检查节点及其子节点中是否有组件
+    checkForWidgets(node) {
+      if (!node) return false;
+      
+      // 当前节点有组件
+      if (node.widget) {
+        console.log('找到组件:', node.widget.name, node.widget.type);
+        return true;
+      }
+      
+      // 递归检查子节点
+      if (node.children && node.children.length > 0) {
+        for (const child of node.children) {
+          if (this.checkForWidgets(child)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
     },
 
     // 隐藏布局预览
     hidePreview() {
       this.previewDialogVisible = false;
+    },
+
+    // 校正列宽度，确保总和为10
+    adjustColumnSpans(columns) {
+      // 只处理列节点
+      const columnNodes = columns.filter(node => node.type === 'column');
+      if (columnNodes.length === 0) return;
+      
+      // 计算当前span总和
+      const totalSpan = columnNodes.reduce((sum, col) => sum + (col.span || 0), 0);
+      
+      // 如果总和不是10，进行校正
+      if (totalSpan !== 10) {
+        // 计算校正因子
+        const factor = 10 / totalSpan;
+        
+        // 记录累计校正结果
+        let assignedSpan = 0;
+        
+        // 为每列分配校正后的span值
+        for (let i = 0; i < columnNodes.length - 1; i++) {
+          const rawSpan = columnNodes[i].span * factor;
+          const newSpan = Math.round(rawSpan);
+          columnNodes[i].span = newSpan;
+          assignedSpan += newSpan;
+        }
+        
+        // 最后一列应该是10减去前面所有列的span总和
+        columnNodes[columnNodes.length - 1].span = 10 - assignedSpan;
+      }
+    },
+
+    // 遍历树并标记有组件的节点
+    markNodesWithComponents(node) {
+      if (!node) return;
+      
+      // 检查当前节点是否有组件
+      if (node.widget) {
+        console.log(`节点 ${node.id} 有组件: ${node.widget.name}`);
+        node.hasWidget = true;
+      }
+      
+      // 递归检查子节点
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => this.markNodesWithComponents(child));
+      }
     }
   },
   watch: {
@@ -923,10 +1056,16 @@ export default {
     layoutTree: {
       handler(newVal) {
         if (newVal && (!this.rootNode || JSON.stringify(newVal) !== JSON.stringify(this.rootNode))) {
+          console.log('检测到vuex中的布局树变化，正在更新...');
+          // 深拷贝以确保不共享引用
           this.rootNode = JSON.parse(JSON.stringify(newVal));
+          
+          // 检查是否有组件的叶子节点
+          this.markNodesWithComponents(this.rootNode);
         }
       },
-      deep: true
+      deep: true,
+      immediate: true
     }
   },
   created() {
@@ -970,12 +1109,12 @@ export default {
       .left-area {
         flex-shrink: 0;
         margin-right: 10px;
-        
-        h2 {
-          margin: 0;
+
+      h2 {
+        margin: 0;
           font-size: 18px;
-          color: #303133;
-          font-weight: 500;
+        color: #303133;
+        font-weight: 500;
           white-space: nowrap;
         }
       }
@@ -1054,9 +1193,9 @@ export default {
       border-bottom: 1px solid #ebeef5;
       font-size: 18px;
       color: #303133;
-    }
-    
-    .layout-container {
+  }
+
+  .layout-container {
       .add-layout-controls {
         margin-top: 24px;
         padding: 16px;
@@ -1075,11 +1214,11 @@ export default {
 
 // 布局节点样式
 ::v-deep .layout-node {
-  position: relative;
+      position: relative;
   border: 1px dashed #dcdfe6;
-  border-radius: 8px;
+      border-radius: 8px;
   margin: 0;
-  transition: all 0.3s;
+      transition: all 0.3s;
   background-color: #fff;
   box-sizing: border-box; // 确保盒模型计算包含边框和内边距
   overflow: hidden; // 防止子元素溢出
@@ -1097,9 +1236,9 @@ export default {
   
   &.is-hovered {
     border-color: #409EFF;
-    background-color: #ecf5ff;
-  }
-  
+        background-color: #ecf5ff;
+      }
+
   // 不同深度层级颜色区分
   &.depth-0 {
     background-color: #f6f8fc;
@@ -1145,7 +1284,7 @@ export default {
   }
   
   .node-header {
-    display: flex;
+        display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
@@ -1154,6 +1293,7 @@ export default {
     .node-title {
       display: flex;
       align-items: center;
+      cursor: pointer;
       
       i {
         margin-right: 8px;
@@ -1175,6 +1315,14 @@ export default {
         color: #909399;
         margin-left: 8px;
         font-weight: normal;
+        
+        &:hover {
+          color: #606266;
+        }
+      }
+      
+      &:hover {
+        opacity: 0.8;
       }
     }
     
@@ -1187,41 +1335,53 @@ export default {
   .node-content {
     padding: 8px;
     min-height: 80px;
+    display: block !important; /* 确保节点内容始终显示 */
+    opacity: 1 !important; /* 强制显示内容 */
+    visibility: visible !important; /* 保证可见性 */
+    
     
     .empty-node {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 120px;
+      height: 100px;
       border: 2px dashed #e4e7ed;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s;
-      
+    transition: all 0.3s;
+      background-color: #f9f9f9;
+
       &:hover {
-        background-color: #f5f7fa;
-        border-color: #c0c4cc;
+        background-color: #ecf5ff;
+        border-color: #409EFF;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
       
       i {
-        font-size: 24px;
-        margin-bottom: 8px;
-        color: #909399;
+        font-size: 28px;
+        margin-bottom: 10px;
+        color: #409EFF;
       }
       
       span {
         color: #606266;
+        font-weight: 500;
       }
     }
     
     .node-widget {
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
       padding: 16px;
+      margin: 0;
       background-color: #f5f7fa;
       border-radius: 8px;
-      
+
       .widget-info {
-        display: flex;
+        display: flex !important;
         justify-content: space-between;
         margin-bottom: 12px;
         
@@ -1235,24 +1395,18 @@ export default {
       }
       
       .widget-preview {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
         min-height: 100px;
         background-color: #fff;
         border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         overflow: hidden;
         
         .preview-component {
           width: 100%;
           height: 100%;
-        }
-        
-        // 当没有组件内容时显示占位信息
-        &:empty::before {
-          content: "组件预览区域";
-          color: #c0c4cc;
-          font-style: italic;
+          display: block !important;
         }
       }
     }
@@ -1269,10 +1423,10 @@ export default {
     margin: 0; // 确保没有外边距
     
     & > .layout-node {
-      margin-bottom: 16px;
-      
-      &:last-child {
-        margin-bottom: 0;
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
       }
     }
   }
@@ -1337,7 +1491,7 @@ export default {
         overflow: hidden;
         background-color: #f5f7fa;
         border-radius: 4px;
-        position: relative;
+      position: relative;
         
         .preview-component {
           transform: scale(0.8);
@@ -1360,7 +1514,7 @@ export default {
 .dialog-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+      align-items: center;
   
   .channel-selection {
     display: flex;
@@ -1381,13 +1535,13 @@ export default {
 }
 
 .empty-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   height: 60px;
   background-color: #f5f7fa;
   border-radius: 4px;
-  color: #909399;
+      color: #909399;
   font-style: italic;
   border: 1px dashed #dcdfe6;
   margin: 0; // 移除外边距

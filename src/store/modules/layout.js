@@ -77,18 +77,24 @@ const getters = {
 const actions = {
   // 保存布局树
   saveLayoutTree({ commit }, layoutTree) {
-    commit('SAVE_LAYOUT_TREE', layoutTree);
+    console.log('Vuex: 保存布局树');
+    // 先提交变更，避免延迟
+    commit('SAVE_LAYOUT_TREE', layoutTree ? JSON.parse(JSON.stringify(layoutTree)) : null);
     
-    // 保存到本地存储，确保页面刷新后仍能恢复
-    try {
-      if (layoutTree) {
-        localStorage.setItem('newsPortalLayoutTree', JSON.stringify(layoutTree));
-      } else {
-        localStorage.removeItem('newsPortalLayoutTree');
+    // 然后异步保存到本地存储
+    setTimeout(() => {
+      try {
+        if (layoutTree) {
+          localStorage.setItem('newsPortalLayoutTree', JSON.stringify(layoutTree));
+        } else {
+          localStorage.removeItem('newsPortalLayoutTree');
+        }
+      } catch (error) {
+        console.error('Failed to save layout to localStorage:', error);
       }
-    } catch (error) {
-      console.error('Failed to save layout to localStorage:', error);
-    }
+    }, 0);
+    
+    return Promise.resolve(layoutTree);
   },
   
   // 加载布局树
