@@ -2,20 +2,21 @@
   <div class="layout-editor">
     <el-header height="60px" class="editor-header">
       <div class="header-controls">
-        <h2>新闻门户布局编辑器</h2>
-        <div class="actions">
-          <el-button type="primary" @click="saveLayout" :loading="saving">保存布局</el-button>
-          <el-button @click="resetLayout" type="danger" plain>重置布局</el-button>
-          <el-dropdown trigger="click" @command="handleExport">
-            <el-button type="info" plain>
-              更多操作 <i class="el-icon-arrow-down el-icon--right"></i>
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="export">导出布局配置</el-dropdown-item>
-              <el-dropdown-item command="import">导入布局配置</el-dropdown-item>
-              <el-dropdown-item divided command="help">查看帮助</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
+        <div class="left-area">
+          <h2>新闻门户布局编辑器</h2>
+        </div>
+        <div class="right-area">
+          <el-button-group class="action-group">
+            <el-button type="primary" icon="el-icon-check" @click="saveLayout" :loading="saving">保存</el-button>
+            <el-button type="success" icon="el-icon-view" @click="showPreview">预览</el-button>
+          </el-button-group>
+          
+          <el-button-group class="action-group">
+            <el-button type="info" icon="el-icon-download" @click="exportLayout">导出</el-button>
+            <el-button type="info" icon="el-icon-upload2" @click="handleExport('import')">导入</el-button>
+            <el-button type="warning" icon="el-icon-question" @click="handleExport('help')">帮助</el-button>
+            <el-button type="danger" icon="el-icon-delete" @click="resetLayout">重置</el-button>
+          </el-button-group>
         </div>
       </div>
     </el-header>
@@ -137,6 +138,24 @@
         <el-button type="primary" @click="confirmAddLayout">确认</el-button>
       </span>
     </el-dialog>
+
+    <!-- 布局预览对话框 -->
+    <el-dialog
+      title="布局预览效果"
+      :visible.sync="previewDialogVisible"
+      width="90%"
+      class="preview-dialog"
+      :fullscreen="true"
+      :before-close="hidePreview">
+      <div class="preview-toolbar">
+        <div class="preview-info">
+          <i class="el-icon-info"></i>
+          <span>此预览展示了布局的最终效果，包括所有添加的组件和栏目内容</span>
+        </div>
+        <el-button type="primary" size="small" @click="hidePreview">返回编辑</el-button>
+      </div>
+      <layout-preview :layout-tree="rootNode" />
+    </el-dialog>
   </div>
 </template>
 
@@ -145,6 +164,7 @@ import { mapState, mapActions } from 'vuex';
 import WidgetRegistry from '@/services/widget-registry';
 import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
+import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 
 // 布局节点组件
 const LayoutNode = {
@@ -223,6 +243,10 @@ const LayoutNode = {
       }
       
       this.$root.$message.info(message);
+    },
+    // 获取组件实例
+    getWidgetComponent(type) {
+      return WidgetRegistry.get(type);
     }
   },
   render(h) {
@@ -288,7 +312,13 @@ const LayoutNode = {
             h('span', { class: 'channel-name' }, `栏目: ${this.node.channelName || '未设置'}`)
           ]),
           h('div', { class: 'widget-preview' }, [
-            // 这里可以添加组件预览
+            // 渲染实际组件
+            h(this.getWidgetComponent(this.node.widget.type), {
+              props: {
+                config: this.node.widget.config || {}
+              },
+              class: 'preview-component'
+            })
           ])
         ]);
       } else {
@@ -454,7 +484,8 @@ const LayoutNode = {
 export default {
   name: 'LayoutEditor',
   components: {
-    LayoutNode
+    LayoutNode,
+    LayoutPreview
   },
   data() {
     return {
@@ -470,12 +501,14 @@ export default {
       newLayoutProps: {
         ratios: '',
         height: ''
-      }
+      },
+      previewDialogVisible: false
     };
   },
   computed: {
     ...mapState('widget', ['widgets']),
     ...mapState('channel', ['channels']),
+    ...mapState('layout', ['layoutTree']),
     
     // 按类型分组的组件
     groupedWidgets() {
@@ -520,6 +553,7 @@ export default {
   methods: {
     ...mapActions('widget', ['fetchWidgets']),
     ...mapActions('channel', ['fetchChannels']),
+    ...mapActions('layout', ['saveLayoutTree', 'loadLayoutTree']),
     
     // 创建根节点
     createRootNode() {
@@ -542,6 +576,9 @@ export default {
         parent: containerId, // 设置父节点
         children: []
       });
+      
+      // 保存到vuex
+      this.saveLayoutTree(this.rootNode);
     },
     
     // 在根节点下添加行
@@ -562,6 +599,7 @@ export default {
         };
         
         this.rootNode.children.push(newRow);
+        this.saveLayoutTree(this.rootNode); // 保存修改后的布局
         this.$message.success('已添加新行布局');
       }
     },
@@ -597,6 +635,7 @@ export default {
       };
       
       deleteNode(this.rootNode, nodeId);
+      this.saveLayoutTree(this.rootNode); // 保存修改后的布局
     },
     
     // 处理节点选择组件
@@ -633,6 +672,8 @@ export default {
         node.widget = { ...widget };
         node.channelId = this.selectedChannelId;
         node.channelName = channel ? channel.name : '';
+        
+        this.saveLayoutTree(this.rootNode); // 保存修改后的布局
       }
       
       this.widgetDialogVisible = false;
@@ -663,6 +704,7 @@ export default {
       this.saving = true;
       try {
         await api.saveLayout({ layoutTree: this.rootNode });
+        this.saveLayoutTree(this.rootNode); // 保存到vuex
         this.$message.success('布局保存成功');
       } catch (error) {
         this.$message.error('保存失败: ' + error.message);
@@ -679,6 +721,7 @@ export default {
         type: 'warning'
       }).then(() => {
         this.rootNode = null;
+        this.saveLayoutTree(null); // 清空vuex中的布局
         this.$message.success('布局已重置');
       }).catch(() => {});
     },
@@ -847,6 +890,7 @@ export default {
         }
       }
       
+      this.saveLayoutTree(this.rootNode);
       this.layoutPropsDialogVisible = false;
     },
     
@@ -858,12 +902,44 @@ export default {
     // 新增：处理布局类型变化
     handleLayoutTypeChange() {
       // 这里可以根据布局类型变化进行相应的处理
+    },
+
+    // 显示布局预览
+    showPreview() {
+      if (!this.rootNode || !this.rootNode.children || !this.rootNode.children.length) {
+        this.$message.warning('布局为空，请先创建布局');
+        return;
+      }
+      this.previewDialogVisible = true;
+    },
+
+    // 隐藏布局预览
+    hidePreview() {
+      this.previewDialogVisible = false;
+    }
+  },
+  watch: {
+    // 监听vuex中的布局树变化
+    layoutTree: {
+      handler(newVal) {
+        if (newVal && (!this.rootNode || JSON.stringify(newVal) !== JSON.stringify(this.rootNode))) {
+          this.rootNode = JSON.parse(JSON.stringify(newVal));
+        }
+      },
+      deep: true
     }
   },
   created() {
     // 加载组件和栏目数据
     this.fetchWidgets();
     this.fetchChannels();
+    
+    // 尝试从vuex加载已保存的布局
+    this.loadLayoutTree().then(layoutTree => {
+      if (layoutTree) {
+        this.rootNode = layoutTree;
+      }
+    });
   }
 };
 </script>
@@ -886,20 +962,50 @@ export default {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 24px;
+      padding: 0 16px;
       width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
 
-      h2 {
-        margin: 0;
-        font-size: 20px;
-        color: #303133;
-        font-weight: 500;
+      .left-area {
+        flex-shrink: 0;
+        margin-right: 10px;
+        
+        h2 {
+          margin: 0;
+          font-size: 18px;
+          color: #303133;
+          font-weight: 500;
+          white-space: nowrap;
+        }
       }
 
-      .actions {
+      .right-area {
         display: flex;
-        gap: 12px;
         align-items: center;
+        gap: 12px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        max-width: calc(100% - 250px);
+        justify-content: flex-end;
+        
+        .el-button {
+          padding: 9px 12px;
+        }
+        
+        .el-button [class^="el-icon-"] + span {
+          margin-left: 5px;
+        }
+        
+        .action-group {
+          flex-shrink: 0;
+          
+          .el-button span {
+            @media (max-width: 768px) {
+              display: none;
+            }
+          }
+        }
       }
     }
   }
@@ -1129,14 +1235,25 @@ export default {
       }
       
       .widget-preview {
-        height: 100px;
+        min-height: 100px;
         background-color: #fff;
         border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #c0c4cc;
-        font-style: italic;
+        overflow: hidden;
+        
+        .preview-component {
+          width: 100%;
+          height: 100%;
+        }
+        
+        // 当没有组件内容时显示占位信息
+        &:empty::before {
+          content: "组件预览区域";
+          color: #c0c4cc;
+          font-style: italic;
+        }
       }
     }
   }
@@ -1275,5 +1392,55 @@ export default {
   border: 1px dashed #dcdfe6;
   margin: 0; // 移除外边距
   padding: 0; // 移除内边距
+}
+
+// 布局预览对话框样式
+.preview-dialog {
+  ::v-deep .el-dialog__body {
+    padding: 0;
+    
+    .layout-preview {
+      border-radius: 0;
+      box-shadow: none;
+      margin-top: 20px;
+    }
+  }
+  
+  ::v-deep .el-dialog__header {
+    background-color: #409EFF;
+    padding: 15px 20px;
+    
+    .el-dialog__title {
+      color: white;
+      font-size: 18px;
+    }
+    
+    .el-dialog__headerbtn {
+      top: 15px;
+      
+      .el-dialog__close {
+        color: white;
+      }
+    }
+  }
+  
+  .preview-toolbar {
+    padding: 15px 20px;
+    background-color: #ecf5ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .preview-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #409EFF;
+      
+      i {
+        font-size: 18px;
+      }
+    }
+  }
 }
 </style> 
