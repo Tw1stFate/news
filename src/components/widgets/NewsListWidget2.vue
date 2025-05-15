@@ -9,7 +9,11 @@
       </div>
     </div>
     
-    <div class="news-list" v-if="config.items && config.items.length > 0">
+    <div v-if="loading" class="loading-list">
+      <el-skeleton :rows="config.maxItems || 7" animated />
+    </div>
+    
+    <div class="news-list" v-else-if="newsItems && newsItems.length > 0">
       <div v-for="(item, index) in displayItems" :key="index" class="news-item" @click="handleItemClick(item)">
         <div class="bullet-point">
           <span class="bullet"></span>
@@ -28,6 +32,8 @@
 </template>
 
 <script>
+import api from '@/services/api';
+
 export default {
   name: 'NewsListWidget2',
   props: {
@@ -39,23 +45,57 @@ export default {
         title: '行务要闻',
         count: 7,
         showDate: true,
-        items: []
+        categoryId: 'domestic',
+        maxItems: 7
       })
     }
   },
+  data() {
+    return {
+      loading: true,
+      newsItems: []
+    };
+  },
   computed: {
     displayItems() {
-      return this.config.items.slice(0, this.config.count || 7);
+      return this.newsItems.slice(0, this.config.count || 7);
     }
   },
+  watch: {
+    // 当配置变化时，重新获取数据
+    config: {
+      handler() {
+        this.fetchNews();
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.fetchNews();
+  },
   methods: {
+    async fetchNews() {
+      this.loading = true;
+      try {
+        // 从API获取新闻数据
+        this.newsItems = await api.getNewsByCategory(
+          this.config.categoryId || 'domestic',
+          this.config.maxItems || 7
+        );
+      } catch (error) {
+        console.error('获取新闻列表失败:', error);
+        this.newsItems = [];
+      } finally {
+        this.loading = false;
+      }
+    },
     handleItemClick(item) {
       if (item.link) {
         window.open(item.link, '_blank');
       }
     },
     handleMoreClick() {
-      this.$emit('more-click', this.config.category || 'default');
+      this.$emit('more-click', this.config.categoryId || 'domestic');
     }
   }
 };
@@ -115,6 +155,11 @@ export default {
       font-size: 12px;
     }
   }
+}
+
+.loading-list {
+  flex: 1;
+  padding: 12px 16px;
 }
 
 .news-list {

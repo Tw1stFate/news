@@ -38,7 +38,8 @@ export default {
         title: '图文新闻',
         imagePosition: 'left',
         description: true,
-        category: 'general'
+        categoryId: 'lifestyle',
+        maxItems: 1
       })
     }
   },
@@ -70,7 +71,10 @@ export default {
     async fetchNews() {
       this.loading = true;
       try {
-        const newsList = await api.getNewsByCategory(this.config.category, 1);
+        const newsList = await api.getNewsByCategory(
+          this.config.categoryId || 'lifestyle',
+          1
+        );
         this.news = newsList.length > 0 ? newsList[0] : null;
       } catch (error) {
         console.error('获取新闻失败:', error);

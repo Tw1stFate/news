@@ -61,8 +61,8 @@ export default {
       this.loading = true;
       try {
         this.newsList = await api.getNewsByCategory(
-          this.config.category,
-          this.config.maxItems
+          this.config.categoryId || 'general',
+          this.config.maxItems || 5
         );
       } catch (error) {
         console.error('获取新闻失败:', error);

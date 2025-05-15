@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import CarouselWidget1 from '@/components/widgets/CarouselWidget1.vue';
 import CarouselWidget2 from '@/components/widgets/CarouselWidget2.vue';
 import CarouselWidget3 from '@/components/widgets/CarouselWidget3.vue';
@@ -80,7 +81,8 @@ const widgetTypes = {
       activeIndicatorWidth: 20,
       showTitle: true,
       titlePosition: 'bottom-right',
-      items: mockData.carousel
+      categoryId: 'headlines', // 关联栏目ID
+      maxItems: 5              // 最大加载数量
     }
   },
   'carousel-2': {
@@ -92,7 +94,8 @@ const widgetTypes = {
       autoplay: true,
       interval: 5000,
       showTitle: true,
-      items: mockData.carousel
+      categoryId: 'headlines', // 关联栏目ID
+      maxItems: 5              // 最大加载数量
     }
   },
   'carousel-3': {
@@ -104,7 +107,8 @@ const widgetTypes = {
       autoplay: true,
       interval: 5000,
       showDate: true,
-      items: mockData.carousel
+      categoryId: 'headlines', // 关联栏目ID
+      maxItems: 5              // 最大加载数量
     }
   },
   headline: {
@@ -113,7 +117,8 @@ const widgetTypes = {
     component: HeadlineWidget,
     defaultConfig: {
       titleStyle: 'large',
-      ...mockData.headline
+      categoryId: 'headlines', // 关联栏目ID
+      maxItems: 1              // 仅显示一条
     }
   },
   'news-list': {
@@ -124,7 +129,8 @@ const widgetTypes = {
       titleStyle: 'medium',
       count: 10,
       showImage: true,
-      items: mockData.newsList
+      categoryId: 'general',   // 关联栏目ID
+      maxItems: 10             // 最大加载数量
     }
   },
   'news-list-1': {
@@ -136,7 +142,8 @@ const widgetTypes = {
       title: '党建引领',
       count: 6,
       showDate: true,
-      items: mockData.newsList
+      categoryId: 'domestic',  // 关联栏目ID
+      maxItems: 6              // 最大加载数量
     }
   },
   'news-list-2': {
@@ -148,7 +155,8 @@ const widgetTypes = {
       title: '行务要闻',
       count: 7,
       showDate: true,
-      items: mockData.newsList
+      categoryId: 'domestic',  // 关联栏目ID
+      maxItems: 7              // 最大加载数量
     }
   },
   'news-list-3': {
@@ -159,7 +167,8 @@ const widgetTypes = {
       height: 400,
       title: '双轻业务',
       count: 4,
-      items: mockData.newsList
+      categoryId: 'finance',   // 关联栏目ID
+      maxItems: 4              // 最大加载数量
     }
   },
   'news-list-4': {
@@ -171,7 +180,8 @@ const widgetTypes = {
       titleStyle: 'medium',
       count: 10,
       showImage: true,
-      items: mockData.newsList
+      categoryId: 'technology', // 关联栏目ID
+      maxItems: 10              // 最大加载数量
     }
   },
   'news-list-5': {
@@ -183,7 +193,8 @@ const widgetTypes = {
       titleStyle: 'medium',
       count: 8,
       showImage: false,
-      items: mockData.newsList
+      categoryId: 'international', // 关联栏目ID
+      maxItems: 8                  // 最大加载数量
     }
   },
   'image-news': {
@@ -193,7 +204,8 @@ const widgetTypes = {
     defaultConfig: {
       layout: 'grid',
       count: 6,
-      items: mockData.imageNews
+      categoryId: 'lifestyle',  // 关联栏目ID
+      maxItems: 6               // 最大加载数量
     }
   },
   'hot-news': {
@@ -203,7 +215,9 @@ const widgetTypes = {
     defaultConfig: {
       count: 10,
       showNumber: true,
-      items: mockData.hotNews
+      period: 'day',           // 时间周期：day, week, month
+      categoryId: 'hot',       // 关联栏目ID
+      maxItems: 10             // 最大加载数量
     }
   }
 };
@@ -223,7 +237,8 @@ const defaultWidgets = [
       activeIndicatorWidth: 20,
       showTitle: true,
       titlePosition: 'bottom-right',
-      items: mockData.carousel
+      categoryId: 'headlines',
+      maxItems: 5
     }
   },
   {
@@ -236,7 +251,8 @@ const defaultWidgets = [
       autoplay: true,
       interval: 5000,
       showTitle: true,
-      items: mockData.carousel
+      categoryId: 'headlines',
+      maxItems: 5
     }
   },
   {
@@ -249,7 +265,8 @@ const defaultWidgets = [
       autoplay: true,
       interval: 5000,
       showDate: true,
-      items: mockData.carousel
+      categoryId: 'headlines',
+      maxItems: 5
     }
   },
   {
@@ -262,7 +279,8 @@ const defaultWidgets = [
       title: '党建引领',
       count: 6,
       showDate: true,
-      items: mockData.newsList
+      categoryId: 'domestic',
+      maxItems: 6
     }
   },
   {
@@ -275,7 +293,8 @@ const defaultWidgets = [
       title: '行务要闻',
       count: 7,
       showDate: true,
-      items: mockData.newsList
+      categoryId: 'domestic',
+      maxItems: 7
     }
   },
   {
@@ -287,7 +306,8 @@ const defaultWidgets = [
       height: 400,
       title: '双轻业务',
       count: 4,
-      items: mockData.newsList
+      categoryId: 'finance',
+      maxItems: 4
     }
   },
   {
@@ -300,7 +320,8 @@ const defaultWidgets = [
       titleStyle: 'medium',
       count: 10,
       showImage: true,
-      items: mockData.newsList
+      categoryId: 'technology',
+      maxItems: 10
     }
   },
   {
@@ -313,7 +334,8 @@ const defaultWidgets = [
       titleStyle: 'medium',
       count: 8,
       showImage: false,
-      items: mockData.newsList
+      categoryId: 'international',
+      maxItems: 8
     }
   },
   {
@@ -325,7 +347,8 @@ const defaultWidgets = [
       height: 360,
       layout: 'grid',
       count: 6,
-      items: mockData.imageNews
+      categoryId: 'lifestyle',
+      maxItems: 6
     }
   },
   {
@@ -337,7 +360,8 @@ const defaultWidgets = [
       height: 400,
       layout: 'waterfall',
       count: 6,
-      items: mockData.imageNews
+      categoryId: 'culture',
+      maxItems: 6
     }
   },
   {
@@ -349,7 +373,9 @@ const defaultWidgets = [
       height: 360,
       count: 10,
       showNumber: true,
-      items: mockData.hotNews
+      period: 'day',
+      categoryId: 'hot',
+      maxItems: 10
     }
   }
 ];

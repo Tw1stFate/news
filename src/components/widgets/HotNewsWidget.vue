@@ -75,8 +75,11 @@ export default {
     async fetchHotNews() {
       this.loading = true;
       try {
-        // 这里我们使用 'hot' 作为特殊分类来获取热门新闻
-        this.hotNews = await api.getNewsByCategory('hot', this.config.maxItems);
+        // 使用配置中的categoryId和maxItems
+        this.hotNews = await api.getNewsByCategory(
+          this.config.categoryId || 'hot', 
+          this.config.maxItems || 10
+        );
       } catch (error) {
         console.error('获取热门新闻失败:', error);
         this.hotNews = [];

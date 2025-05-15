@@ -703,7 +703,14 @@ export default {
         
         // 深拷贝组件对象
         const widgetCopy = JSON.parse(JSON.stringify(widget));
-        console.log('保存组件数据:', widgetCopy);
+        
+        // 确保config中不包含items属性
+        if (widgetCopy.config && 'items' in widgetCopy.config) {
+          console.log('移除组件配置中的items属性:', widgetCopy.config.items);
+          delete widgetCopy.config.items;
+        }
+        
+        console.log('保存组件数据(已清理items):', widgetCopy);
         
         // 使用Vue的响应式更新机制
         this.$set(node, 'widget', widgetCopy);
@@ -806,7 +813,32 @@ export default {
     // 导出布局配置
     exportLayout() {
       try {
-        const layoutConfig = JSON.stringify(this.rootNode, null, 2);
+        // 深拷贝布局树，以便在导出前进行清理
+        const layoutTreeCopy = JSON.parse(JSON.stringify(this.rootNode));
+        
+        // 递归清理布局树中的widget配置，移除items属性
+        const cleanLayoutTree = (node) => {
+          if (!node) return;
+          
+          // 如果节点有widget，清理其配置
+          if (node.widget && node.widget.config) {
+            // 确保不导出items属性
+            if ('items' in node.widget.config) {
+              delete node.widget.config.items;
+            }
+          }
+          
+          // 递归处理子节点
+          if (node.children && node.children.length > 0) {
+            node.children.forEach(child => cleanLayoutTree(child));
+          }
+        };
+        
+        // 执行清理
+        cleanLayoutTree(layoutTreeCopy);
+        
+        // 导出清理后的配置
+        const layoutConfig = JSON.stringify(layoutTreeCopy, null, 2);
         const blob = new Blob([layoutConfig], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         

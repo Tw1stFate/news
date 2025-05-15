@@ -14,10 +14,14 @@
       <div class="indicator-active" :style="{ width: `${indicatorWidth}px`, left: `${indicatorLeft}px` }"></div>
     </div>
     
-    <div class="widget-content" v-if="config.items && config.items.length > 0">
+    <div v-if="loading" class="loading-content">
+      <el-skeleton :rows="config.maxItems || 4" animated />
+    </div>
+    
+    <div class="widget-content" v-else-if="newsItems && newsItems.length > 0">
       <!-- 左侧大图 -->
-      <div class="feature-image" @click="handleItemClick(config.items[0])">
-        <img :src="config.items[0].image || config.items[0].thumbnail" :alt="config.items[0].title">
+      <div class="feature-image" @click="handleItemClick(newsItems[0])">
+        <img :src="newsItems[0].image || newsItems[0].thumbnail" :alt="newsItems[0].title">
       </div>
       
       <!-- 右侧列表 -->
@@ -35,6 +39,8 @@
 </template>
 
 <script>
+import api from '@/services/api';
+
 export default {
   name: 'NewsListWidget3',
   props: {
@@ -45,29 +51,62 @@ export default {
         height: 400,
         title: '双轻业务',
         count: 4,
-        items: []
+        categoryId: 'finance',
+        maxItems: 4
       })
     }
   },
   data() {
     return {
       indicatorWidth: 0,
-      indicatorLeft: 16
+      indicatorLeft: 16,
+      loading: true,
+      newsItems: []
     };
   },
   computed: {
     displayItems() {
-      return this.config.items.slice(0, this.config.count || 4);
+      return this.newsItems.slice(0, this.config.count || 4);
     }
   },
+  watch: {
+    // 当配置变化时，重新获取数据
+    config: {
+      handler() {
+        this.fetchNews();
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.fetchNews();
+  },
   methods: {
+    async fetchNews() {
+      this.loading = true;
+      try {
+        // 从API获取新闻数据
+        this.newsItems = await api.getNewsByCategory(
+          this.config.categoryId || 'finance',
+          this.config.maxItems || 4
+        );
+      } catch (error) {
+        console.error('获取新闻列表失败:', error);
+        this.newsItems = [];
+      } finally {
+        this.loading = false;
+        this.$nextTick(() => {
+          this.updateIndicatorWidth();
+        });
+      }
+    },
     handleItemClick(item) {
       if (item.link) {
         window.open(item.link, '_blank');
       }
     },
     handleMoreClick() {
-      this.$emit('more-click', this.config.category || 'default');
+      this.$emit('more-click', this.config.categoryId || 'finance');
     },
     updateIndicatorWidth() {
       this.$nextTick(() => {
@@ -105,6 +144,11 @@ export default {
   overflow: hidden;
   box-shadow: none;
   border: 1px solid #e5e5e5;
+}
+
+.loading-content {
+  flex: 1;
+  padding: 16px;
 }
 
 .widget-header {

@@ -1,6 +1,9 @@
 <template>
   <div class="carousel-widget">
-    <template v-if="config.items && config.items.length > 0">
+    <div v-if="loading" class="loading-carousel">
+      <el-skeleton animated :rows="1" style="height: 100%" />
+    </div>
+    <template v-else-if="items && items.length > 0">
       <div class="carousel-container">
         <div class="main-content">
           <div class="carousel-main">
@@ -14,7 +17,7 @@
               arrow="always"
               :pause-on-hover="true"
             >
-              <el-carousel-item v-for="item in config.items" :key="item.id">
+              <el-carousel-item v-for="item in items" :key="item.id">
                 <div class="carousel-item">
                   <img :src="item.image" :alt="item.title" class="carousel-image">
                   <div v-if="config.showTitle" class="carousel-title">{{ item.title }}</div>
@@ -30,7 +33,7 @@
             <i class="el-icon-arrow-up"></i>
           </div>
           <div class="thumbnails-container">
-            <div v-for="(item, index) in config.items"
+            <div v-for="(item, index) in items"
                  :key="index"
                  class="thumbnail"
                  :class="{ active: currentIndex === index }"
@@ -38,7 +41,7 @@
               <img :src="item.thumbnail || item.image" :alt="item.title">
             </div>
           </div>
-          <div class="nav-arrow next" @click="next" :class="{ disabled: currentIndex === config.items.length - 1 }">
+          <div class="nav-arrow next" @click="next" :class="{ disabled: currentIndex === items.length - 1 }">
             <i class="el-icon-arrow-down"></i>
           </div>
         </div>
@@ -46,12 +49,14 @@
     </template>
     
     <div v-else class="empty-carousel">
-      <el-empty description="请在配置中添加轮播项"></el-empty>
+      <el-empty description="暂无轮播数据"></el-empty>
     </div>
   </div>
 </template>
 
 <script>
+import api from '@/services/api';
+
 export default {
   name: 'CarouselWidget2',
   props: {
@@ -62,22 +67,52 @@ export default {
         height: 360,
         autoplay: false,
         interval: 0,
-        items: [],
-        showTitle: true
+        showTitle: true,
+        categoryId: 'headlines',
+        maxItems: 5
       })
     }
   },
   data() {
     return {
-      currentIndex: 0
+      currentIndex: 0,
+      loading: true,
+      items: []
     }
   },
   computed: {
     currentItem() {
-      return this.config.items[this.currentIndex] || {};
+      return this.items[this.currentIndex] || {};
     }
   },
+  watch: {
+    // 当配置变化时，重新获取数据
+    config: {
+      handler() {
+        this.fetchData();
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.fetchData();
+  },
   methods: {
+    async fetchData() {
+      this.loading = true;
+      try {
+        // 从API获取轮播数据
+        this.items = await api.getNewsByCategory(
+          this.config.categoryId || 'headlines',
+          this.config.maxItems || 5
+        );
+      } catch (error) {
+        console.error('获取轮播数据失败:', error);
+        this.items = [];
+      } finally {
+        this.loading = false;
+      }
+    },
     handleChange(index) {
       this.currentIndex = index;
       this.$nextTick(() => {
@@ -129,6 +164,15 @@ export default {
   overflow: hidden;
   position: relative;
   height: v-bind('`${config.height}px`');
+}
+
+.loading-carousel {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f7fa;
+  padding: 10px;
 }
 
 .carousel-container {
