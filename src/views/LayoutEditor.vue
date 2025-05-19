@@ -3,7 +3,7 @@
     <el-header height="60px" class="editor-header">
       <div class="header-controls">
         <div class="left-area">
-        <h2>新闻门户布局编辑器</h2>
+          <h2>新闻门户布局编辑器</h2>
         </div>
         <div class="right-area">
           <el-button-group class="action-group">
@@ -13,7 +13,7 @@
           
           <el-button-group class="action-group">
             <el-button type="info" icon="el-icon-download" @click="exportLayout">导出</el-button>
-            <el-button type="info" icon="el-icon-upload2" @click="handleExport('import')">导入</el-button>
+            <el-button type="info" icon="el-icon-upload2" @click="openImportDialog">导入</el-button>
             <el-button type="warning" icon="el-icon-question" @click="handleExport('help')">帮助</el-button>
             <el-button type="danger" icon="el-icon-delete" @click="resetLayout">重置</el-button>
           </el-button-group>
@@ -57,7 +57,7 @@
           </div>
         </template>
       </div>
-                      </div>
+    </div>
 
     <!-- 组件选择对话框 -->
     <el-dialog
@@ -157,6 +157,48 @@
       </div>
       <layout-preview :layout-tree="previewLayoutTree" />
     </el-dialog>
+
+    <!-- 导入布局对话框 -->
+    <el-dialog
+      title="导入布局配置"
+      :visible.sync="importDialogVisible"
+      :width="dialogWidth"
+      :close-on-click-modal="false"
+      :close-on-press-escape="!importing"
+      @closed="handleImportDialogClosed"
+      custom-class="import-layout-dialog">
+      <div class="import-dialog-content">
+        <el-upload
+          class="layout-uploader"
+          drag
+          action="#"
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          :limit="1"
+          :file-list="importFileList"
+          :disabled="importing"
+          ref="importUpload">
+          <i class="el-icon-upload"></i>
+          <div class="el-upload__text">将布局配置文件拖到此处，或<em>点击上传</em></div>
+          <div slot="tip" class="el-upload__tip">只能上传JSON文件，且布局结构必须符合要求</div>
+        </el-upload>
+        <div class="import-tips" v-if="importFile">
+          <el-alert
+            title="导入操作将覆盖当前布局"
+            type="warning"
+            :closable="false"
+            show-icon>
+            <p>请确保已备份当前布局，导入操作不可撤销。</p>
+          </el-alert>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="cancelImport" :disabled="importing">取消</el-button>
+        <el-button type="primary" @click="importLayout" :disabled="!importFile || importing" :loading="importing">
+          导入
+        </el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -166,6 +208,7 @@ import WidgetRegistry from '@/services/widget-registry';
 import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
 import LayoutPreview from '@/components/preview/LayoutPreview.vue';
+import LayoutUtils from '@/utils/layout-utils';
 
 // 布局节点组件
 const LayoutNode = {
@@ -290,7 +333,7 @@ const LayoutNode = {
           h('layout-node', {
             props: {
               node: child,
-              depth: this.depth + 1
+              depth: this.depth + 12
             },
             style: child.type === 'column' ? {
               flex: child.percentWidth ? `0 0 ${child.percentWidth}` : `${child.span} 0 0`,
@@ -518,7 +561,12 @@ export default {
         height: ''
       },
       previewDialogVisible: false,
-      previewLayoutTree: null
+      previewLayoutTree: null,
+      importDialogVisible: false,
+      importFile: null,
+      importFileList: [],
+      importing: false,
+      dialogWidth: '40%'  // 默认对话框宽度
     };
   },
   computed: {
@@ -788,7 +836,7 @@ export default {
       if (command === 'export') {
         this.exportLayout();
       } else if (command === 'import') {
-        this.$message.info('此功能正在开发中');
+        this.openImportDialog();
       } else if (command === 'help') {
         this.$alert(
           `<p>布局编辑器使用说明：</p>
@@ -800,6 +848,8 @@ export default {
             <li>任何布局都可以设置高度(如200px)</li>
             <li>在叶子节点可以<b>选择组件</b>并关联新闻栏目</li>
             <li>完成后点击<b>保存布局</b>保存您的设计</li>
+            <li>可以使用<b>导出</b>功能将布局保存为JSON文件</li>
+            <li>使用<b>导入</b>功能可以加载已保存的布局配置</li>
           </ol>`,
           '使用帮助',
           {
@@ -811,49 +861,234 @@ export default {
     },
     
     // 导出布局配置
-    exportLayout() {
+    async exportLayout() {
       try {
-        // 深拷贝布局树，以便在导出前进行清理
-        const layoutTreeCopy = JSON.parse(JSON.stringify(this.rootNode));
+        // 使用工具类导出布局
+        const success = await LayoutUtils.exportLayoutToFile(this.rootNode);
         
-        // 递归清理布局树中的widget配置，移除items属性
-        const cleanLayoutTree = (node) => {
-          if (!node) return;
-          
-          // 如果节点有widget，清理其配置
-          if (node.widget && node.widget.config) {
-            // 确保不导出items属性
-            if ('items' in node.widget.config) {
-              delete node.widget.config.items;
-            }
-          }
-          
-          // 递归处理子节点
-          if (node.children && node.children.length > 0) {
-            node.children.forEach(child => cleanLayoutTree(child));
-          }
-        };
-        
-        // 执行清理
-        cleanLayoutTree(layoutTreeCopy);
-        
-        // 导出清理后的配置
-        const layoutConfig = JSON.stringify(layoutTreeCopy, null, 2);
-        const blob = new Blob([layoutConfig], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `news-portal-layout-${new Date().toISOString().slice(0, 10)}.json`;
-        link.click();
-        
-        URL.revokeObjectURL(url);
-        this.$message.success('布局配置已导出');
+        if (success) {
+          this.$message.success('布局配置已导出');
+        } else {
+          this.$message.error('导出失败');
+        }
       } catch (error) {
         this.$message.error('导出失败: ' + error.message);
       }
     },
-
+    
+    // 打开导入对话框
+    openImportDialog() {
+      this.importDialogVisible = true;
+      // 先重置状态，防止之前的状态残留
+      setTimeout(() => {
+        this.resetImportState();
+      }, 100);
+    },
+    
+    // 重置导入状态
+    resetImportState() {
+      // 确保清除所有导入相关状态
+      this.importing = false;
+      this.importFile = null;
+      
+      // 清空文件列表
+      this.importFileList = [];
+      
+      // 手动触发文件上传组件重置
+      this.$nextTick(() => {
+        const uploadRef = this.$refs.importUpload;
+        if (uploadRef && typeof uploadRef.clearFiles === 'function') {
+          uploadRef.clearFiles();
+        }
+      });
+    },
+    
+    // 取消导入
+    cancelImport() {
+      if (this.importing) return;
+      this.importDialogVisible = false;
+    },
+    
+    // 处理导入对话框关闭事件
+    handleImportDialogClosed() {
+      // 确保对话框关闭后重置状态
+      this.resetImportState();
+    },
+    
+    // 导入布局
+    async importLayout() {
+      console.log('执行导入', this.importFile, this.importFileList);
+      
+      if (!this.importFile) {
+        this.$message.warning('请先选择布局配置文件');
+        return;
+      }
+      
+      // 设置导入中状态
+      this.importing = true;
+      
+      // 创建加载提示
+      const loadingInstance = this.$loading({
+        lock: true,
+        text: '正在解析布局文件...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(255, 255, 255, 0.7)'
+      });
+      
+      try {
+        // 使用工具类导入布局
+        let layoutTree = await LayoutUtils.importLayoutFromFile(this.importFile);
+        
+        // 更新加载提示
+        loadingInstance.text = '验证布局数据...';
+        
+        // 确认导入操作
+        try {
+          await this.$confirm('导入将覆盖当前布局，确定要继续吗？', '确认导入', {
+            confirmButtonText: '确定导入',
+            cancelButtonText: '取消',
+            type: 'warning',
+            closeOnClickModal: false,
+            closeOnPressEscape: false
+          });
+        } catch (e) {
+          // 用户取消导入
+          console.log('用户取消导入');
+          loadingInstance.close();
+          this.importing = false;
+          return;
+        }
+        
+        // 使用工具类修复布局样式
+        layoutTree = LayoutUtils.fixLayoutNodeStyles(layoutTree);
+        
+        // 更新加载提示
+        loadingInstance.text = '正在应用布局...';
+        
+        // 确保所有节点的widget和channelId属性正确设置
+        this.repairImportedLayout(layoutTree);
+        
+        // 使用nextTick和setTimeout确保UI完全更新
+        this.$nextTick(() => {
+          setTimeout(() => {
+            try {
+              // 更新布局树
+              this.rootNode = null; // 先设置为null触发完整重绘
+              
+              this.$nextTick(() => {
+                this.rootNode = layoutTree;
+                
+                // 保存到vuex
+                this.saveLayoutTree(layoutTree);
+                
+                // 关闭加载提示
+                loadingInstance.close();
+                
+                this.$message.success('布局导入成功');
+                this.importDialogVisible = false;
+                
+                // 导入成功后重置状态
+                this.resetImportState();
+              });
+            } catch (error) {
+              console.error('应用布局错误:', error);
+              loadingInstance.close();
+              this.$message.error('应用布局失败: ' + error.message);
+              this.importing = false;
+            }
+          }, 300); // 短暂延迟确保DOM已更新
+        });
+      } catch (error) {
+        // 关闭加载提示
+        loadingInstance.close();
+        
+        console.error('导入布局失败:', error);
+        this.$message.error({
+          message: error.message || '导入失败',
+          duration: 5000,
+          showClose: true
+        });
+        
+        // 重置状态
+        this.importing = false;
+      }
+    },
+    
+    // 修复导入的布局树，确保所有节点的属性正确设置
+    repairImportedLayout(node) {
+      if (!node) return;
+      
+      // 对导入的布局进行处理，确保节点与现有组件和栏目匹配
+      if (node.widget) {
+        // 检查widget是否存在于当前系统
+        const existingWidget = this.widgets.find(w => 
+          w.type === node.widget.type || 
+          w.id === node.widget.id
+        );
+        
+        if (!existingWidget) {
+          // 组件不存在，清除widget属性
+          console.warn(`导入的布局包含未知组件类型: ${node.widget.type}，已清除`);
+          delete node.widget;
+          delete node.channelId;
+          delete node.channelName;
+          delete node.hasWidget;
+        } else {
+          // 确保widget引用最新的组件定义
+          node.widget = JSON.parse(JSON.stringify(existingWidget));
+          
+          // 检查关联的栏目是否存在
+          if (node.channelId) {
+            const existingChannel = this.channels.find(c => c.id === node.channelId);
+            if (!existingChannel) {
+              // 栏目不存在，清除channelId但保留组件
+              console.warn(`导入的布局关联了未知栏目ID: ${node.channelId}，已清除`);
+              delete node.channelId;
+              delete node.channelName;
+            } else {
+              // 更新栏目名称，确保与当前系统匹配
+              node.channelName = existingChannel.name;
+            }
+          }
+          
+          // 确保widget配置不包含items属性
+          if (node.widget.config && 'items' in node.widget.config) {
+            delete node.widget.config.items;
+          }
+        }
+        
+        // 确保设置了hasWidget标记
+        if (node.widget) {
+          node.hasWidget = true;
+        }
+      }
+      
+      // 递归处理子节点
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => this.repairImportedLayout(child));
+      }
+    },
+    
+    // 处理文件选择变化
+    handleFileChange(file, fileList) {
+      console.log('文件变更:', file, fileList);
+      
+      // 检查文件类型
+      const isJson = file.raw.type === 'application/json' || file.raw.name.endsWith('.json');
+      if (!isJson) {
+        this.$message.error('只能上传JSON格式的文件!');
+        // 清空文件列表
+        this.$refs.importUpload.clearFiles();
+        this.importFile = null;
+        this.importFileList = [];
+        return;
+      }
+      
+      // 更新文件状态
+      this.importFile = file.raw;
+      this.importFileList = [file];
+    },
+    
     // 新增：显示布局属性设置对话框
     showLayoutPropsDialog(layoutType, parentId) {
       this.layoutPropsDialogVisible = true;
@@ -1081,6 +1316,18 @@ export default {
       if (node.children && node.children.length > 0) {
         node.children.forEach(child => this.markNodesWithComponents(child));
       }
+    },
+
+    // 设置对话框宽度
+    setDialogWidth() {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 768) {
+        this.dialogWidth = '90%';
+      } else if (screenWidth < 1200) {
+        this.dialogWidth = '60%';
+      } else {
+        this.dialogWidth = '40%';
+      }
     }
   },
   watch: {
@@ -1111,6 +1358,16 @@ export default {
         this.rootNode = layoutTree;
       }
     });
+  },
+  mounted() {
+    // 根据屏幕宽度设置对话框宽度
+    this.setDialogWidth();
+    // 监听窗口大小变化
+    window.addEventListener('resize', this.setDialogWidth);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    window.removeEventListener('resize', this.setDialogWidth);
   }
 };
 </script>
@@ -1141,12 +1398,12 @@ export default {
       .left-area {
         flex-shrink: 0;
         margin-right: 10px;
-
-      h2 {
-        margin: 0;
+        
+        h2 {
+          margin: 0;
           font-size: 18px;
-        color: #303133;
-        font-weight: 500;
+          color: #303133;
+          font-weight: 500;
           white-space: nowrap;
         }
       }
@@ -1225,9 +1482,9 @@ export default {
       border-bottom: 1px solid #ebeef5;
       font-size: 18px;
       color: #303133;
-  }
+    }
 
-  .layout-container {
+    .layout-container {
       .add-layout-controls {
         margin-top: 24px;
         padding: 16px;
@@ -1244,13 +1501,12 @@ export default {
   }
 }
 
-// 布局节点样式
 ::v-deep .layout-node {
-      position: relative;
+  position: relative;
   border: 1px dashed #dcdfe6;
-      border-radius: 8px;
+  border-radius: 8px;
   margin: 0;
-      transition: all 0.3s;
+  transition: all 0.3s;
   background-color: #fff;
   box-sizing: border-box; // 确保盒模型计算包含边框和内边距
   overflow: hidden; // 防止子元素溢出
@@ -1268,8 +1524,8 @@ export default {
   
   &.is-hovered {
     border-color: #409EFF;
-        background-color: #ecf5ff;
-      }
+    background-color: #ecf5ff;
+  }
 
   // 不同深度层级颜色区分
   &.depth-0 {
@@ -1316,7 +1572,7 @@ export default {
   }
   
   .node-header {
-        display: flex;
+    display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
@@ -1381,7 +1637,7 @@ export default {
       border: 2px dashed #e4e7ed;
       border-radius: 8px;
       cursor: pointer;
-    transition: all 0.3s;
+      transition: all 0.3s;
       background-color: #f9f9f9;
 
       &:hover {
@@ -1455,10 +1711,10 @@ export default {
     margin: 0; // 确保没有外边距
     
     & > .layout-node {
-    margin-bottom: 16px;
+      margin-bottom: 16px;
 
-    &:last-child {
-      margin-bottom: 0;
+      &:last-child {
+        margin-bottom: 0;
       }
     }
   }
@@ -1523,7 +1779,7 @@ export default {
         overflow: hidden;
         background-color: #f5f7fa;
         border-radius: 4px;
-      position: relative;
+        position: relative;
         
         .preview-component {
           transform: scale(0.8);
@@ -1546,7 +1802,7 @@ export default {
 .dialog-footer {
   display: flex;
   justify-content: space-between;
-      align-items: center;
+  align-items: center;
   
   .channel-selection {
     display: flex;
@@ -1567,13 +1823,13 @@ export default {
 }
 
 .empty-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 60px;
   background-color: #f5f7fa;
   border-radius: 4px;
-      color: #909399;
+  color: #909399;
   font-style: italic;
   border: 1px dashed #dcdfe6;
   margin: 0; // 移除外边距
@@ -1625,6 +1881,163 @@ export default {
       
       i {
         font-size: 18px;
+      }
+    }
+  }
+}
+
+.import-dialog-content {
+  padding: 0;
+  
+  .layout-uploader {
+    text-align: center;
+    
+    .el-upload__tip {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #909399;
+    }
+    
+    .el-upload-dragger {
+      width: 100%;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      
+      i {
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
+      
+      .el-upload__text {
+        font-size: 16px;
+        line-height: 1.4;
+        padding: 0 15px;
+        text-align: center;
+        word-break: break-word;
+        
+        em {
+          color: #409EFF;
+          font-style: normal;
+        }
+      }
+    }
+  }
+  
+  .import-tips {
+    margin-top: 15px;
+    
+    p {
+      margin: 5px 0 0;
+      font-size: 12px;
+    }
+  }
+}
+
+::v-deep .import-layout-dialog {
+  max-width: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+  
+  .el-dialog__header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #EBEEF5;
+  }
+  
+  .el-dialog__body {
+    padding: 20px;
+  }
+  
+  .el-dialog__footer {
+    padding: 10px 20px 15px;
+    border-top: 1px solid #EBEEF5;
+  }
+  
+  .el-upload-dragger {
+    border-radius: 6px;
+  }
+}
+
+// 文件上传组件样式
+::v-deep .el-upload {
+  width: 100%;
+  
+  .el-upload-dragger {
+    width: 100% !important;
+  }
+}
+</style>
+
+<style lang="scss">
+/* 响应式布局样式 - 全局作用域 */
+@media screen and (max-width: 768px) {
+  .import-layout-dialog {
+    margin-top: 5vh !important;
+    max-width: 95% !important;
+    
+    .el-dialog__header {
+      padding: 12px 15px !important;
+      
+      .el-dialog__title {
+        font-size: 16px !important;
+      }
+    }
+    
+    .el-dialog__body {
+      padding: 15px !important;
+      max-height: 60vh !important;
+      overflow-y: auto !important;
+    }
+    
+    .el-dialog__footer {
+      padding: 8px 15px 12px !important;
+      display: flex !important;
+      justify-content: flex-end !important;
+      
+      .el-button {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+      }
+    }
+  }
+  
+  .import-dialog-content {
+    .layout-uploader {
+      .el-upload-dragger {
+        height: 140px !important;
+        
+        i {
+          font-size: 36px !important;
+          margin-bottom: 8px !important;
+        }
+        
+        .el-upload__text {
+          font-size: 14px !important;
+        }
+      }
+      
+      .el-upload__tip {
+        font-size: 12px !important;
+        margin-top: 8px !important;
+      }
+    }
+    
+    .import-tips {
+      margin-top: 12px !important;
+      
+      .el-alert {
+        padding: 8px 12px !important;
+        
+        .el-alert__title {
+          font-size: 13px !important;
+        }
+        
+        p {
+          font-size: 12px !important;
+          margin-top: 4px !important;
+        }
       }
     }
   }
