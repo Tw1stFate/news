@@ -51,7 +51,59 @@
 
               <!-- 初始化后添加行布局按钮 -->
               <div class="add-layout-controls">
-                <el-button type="primary" icon="el-icon-plus" @click="addRootRow">添加行布局</el-button>
+                <div class="quick-layout-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>行数:</label>
+                      <el-input-number v-model="quickRowConfig.rows" :min="1" :max="5" size="small"></el-input-number>
+                    </div>
+                    <div class="form-group">
+                      <label>行高:</label>
+                      <div class="height-input">
+                        <el-input v-model="quickRowConfig.height" size="small" placeholder="例如: 200">
+                          <template slot="append">px</template>
+                        </el-input>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group" style="min-width: 180px;">
+                      <label>列配置:</label>
+                      <el-select v-model="quickRowConfig.columnPreset" size="small" style="width: 160px;" @change="handlePresetChange">
+                        <el-option label="不分列" value="none"></el-option>
+                        <el-option label="等宽一列 (100%)" value="1"></el-option>
+                        <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
+                        <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
+                        <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
+                        <el-option label="两列 (1:2)" value="1:2"></el-option>
+                        <el-option label="自定义" value="custom"></el-option>
+                      </el-select>
+                    </div>
+                    
+                    <div class="preview" v-if="quickRowConfig.columnPreset !== 'none'" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                      <div class="preview-cols">
+                        <div 
+                          v-for="(width, index) in quickRowConfig.columnWidths" 
+                          :key="index" 
+                          class="preview-col"
+                          :style="{ width: width + '%' }">
+                          {{ width }}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="form-group" v-if="quickRowConfig.columnPreset === 'custom'" style="margin-top: 10px;">
+                    <label>自定义比例:</label>
+                    <el-input v-model="quickRowConfig.customRatio" size="small" placeholder="例如: 1:2:1" @change="handlePresetChange"></el-input>
+                  </div>
+                  
+                  <div class="form-actions">
+                    <el-button size="small" @click="clearQuickConfig">重置</el-button>
+                    <el-button type="primary" size="small" @click="quickAddRows">创建布局</el-button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -197,6 +249,72 @@
         <el-button type="primary" @click="importLayout" :disabled="!importFile || importing" :loading="importing">
           导入
         </el-button>
+      </span>
+    </el-dialog>
+    
+    <!-- 快速创建布局对话框 -->
+    <el-dialog
+      title="快速创建布局"
+      :visible.sync="quickLayoutDialogVisible"
+      width="40%">
+      <el-form :model="quickLayoutConfig" label-width="100px">
+        <el-form-item label="行数" prop="rows">
+          <el-input-number v-model="quickLayoutConfig.rows" :min="1" :max="10" size="small"></el-input-number>
+          <div class="form-item-tip">选择要创建的行数 (1-10)</div>
+        </el-form-item>
+        
+        <el-form-item label="每行列配置">
+          <div v-for="(row, index) in quickLayoutConfig.rowConfigs" :key="index" class="row-config">
+            <div class="row-header">
+              <span class="row-label">第 {{ index + 1 }} 行</span>
+              <el-select v-model="row.columnType" size="small" style="width: 120px;" @change="updateRowConfig(index)">
+                <el-option label="无列" value="none"></el-option>
+                <el-option label="等宽列" value="equal"></el-option>
+                <el-option label="自定义比例" value="custom"></el-option>
+              </el-select>
+            </div>
+            
+            <div class="column-config" v-if="row.columnType !== 'none'">
+              <template v-if="row.columnType === 'equal'">
+                <el-input-number 
+                  v-model="row.columns" 
+                  :min="1" 
+                  :max="6" 
+                  size="small" 
+                  @change="updateRowConfig(index)">
+                </el-input-number>
+                <span class="config-label">个等宽列</span>
+              </template>
+              
+              <template v-else-if="row.columnType === 'custom'">
+                <el-input 
+                  v-model="row.ratio" 
+                  placeholder="例如: 1:2:1" 
+                  size="small" 
+                  style="width: 200px;"
+                  @change="updateRowConfig(index)">
+                </el-input>
+                <div class="form-item-tip">使用冒号分隔各列宽度比例</div>
+              </template>
+            </div>
+            
+            <div class="row-preview" v-if="row.columnType !== 'none'">
+              <div class="preview-row">
+                <div 
+                  v-for="(width, colIndex) in row.columnWidths" 
+                  :key="colIndex"
+                  class="preview-col"
+                  :style="{ width: width + '%' }">
+                  {{ width }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="quickLayoutDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="createQuickLayout">创建布局</el-button>
       </span>
     </el-dialog>
   </div>
@@ -391,16 +509,8 @@ const LayoutNode = {
       
       // 添加布局按钮（对所有节点都显示）
       if (this.node.type === 'row') {
-        // 行布局中可以添加行和列
+        // 行布局中只能添加列
         buttons.push(
-          h('el-button', {
-            props: { 
-              type: 'primary',
-              size: 'mini',
-              icon: 'el-icon-s-unfold'
-            },
-            on: { click: this.addRow }
-          }, '添加行'),
           h('el-button', {
             props: { 
               type: 'primary',
@@ -409,18 +519,6 @@ const LayoutNode = {
             },
             on: { click: this.addColumn }
           }, '添加列')
-        );
-      } else if (this.node.type === 'column') {
-        // 列布局中只能添加行
-        buttons.push(
-          h('el-button', {
-            props: { 
-              type: 'primary',
-              size: 'mini',
-              icon: 'el-icon-s-unfold'
-            },
-            on: { click: this.addRow }
-          }, '添加行')
         );
       }
       
@@ -566,7 +664,22 @@ export default {
       importFile: null,
       importFileList: [],
       importing: false,
-      dialogWidth: '40%'  // 默认对话框宽度
+      dialogWidth: '40%',  // 默认对话框宽度
+      quickLayoutDialogVisible: false,
+      quickLayoutConfig: {
+        rows: 2,
+        rowConfigs: [
+          { columnType: 'equal', columns: 2, columnWidths: [50, 50], ratio: '1:1' },
+          { columnType: 'equal', columns: 3, columnWidths: [33.33, 33.33, 33.34], ratio: '1:1:1' }
+        ]
+      },
+      quickRowConfig: {
+        rows: 1,
+        columnPreset: '1:1',
+        customRatio: '1:2:1',
+        height: '',
+        columnWidths: [50, 50]
+      }
     };
   },
   computed: {
@@ -1127,9 +1240,9 @@ export default {
           children: []
         });
       } else if (layoutType === 'row') {
-        // 添加行布局
+        // 只在根节点下添加行布局，实现平铺的二维结构
         const parent = this.findNodeById(this.rootNode, parentId);
-        if (parent) {
+        if (parent && parent.id === this.rootNode.id) {
           if (!parent.children) {
             parent.children = [];
           }
@@ -1166,7 +1279,7 @@ export default {
           }
         }
       } else if (layoutType === 'column') {
-        // 添加列布局
+        // 添加列布局，只能在行内添加列
         const parent = this.findNodeById(this.rootNode, parentId);
         if (parent && parent.type === 'row') {
           if (!parent.children) {
@@ -1328,6 +1441,255 @@ export default {
       } else {
         this.dialogWidth = '40%';
       }
+    },
+
+    // 新增：显示快速创建布局对话框
+    showQuickLayoutDialog() {
+      // 初始化快速创建布局配置
+      this.quickLayoutConfig = {
+        rows: 2,
+        rowConfigs: [
+          { columnType: 'equal', columns: 2, columnWidths: [50, 50], ratio: '1:1' },
+          { columnType: 'equal', columns: 3, columnWidths: [33.33, 33.33, 33.34], ratio: '1:1:1' }
+        ]
+      };
+      
+      // 确保所有行配置都有列宽数组
+      this.quickLayoutConfig.rowConfigs.forEach((rowConfig) => {
+        this.updateRowConfig(this.quickLayoutConfig.rowConfigs.indexOf(rowConfig));
+      });
+      
+      this.quickLayoutDialogVisible = true;
+    },
+    
+    // 新增：处理快速创建布局
+    createQuickLayout() {
+      // 验证根节点
+      if (!this.rootNode) {
+        this.createRootNode();
+      }
+      
+      // 清空现有布局
+      this.rootNode.children = [];
+      
+      // 遍历创建布局行
+      this.quickLayoutConfig.rowConfigs.forEach((rowConfig) => {
+        // 创建行布局节点
+        const rowNode = {
+          id: uuidv4(),
+          type: 'row',
+          height: '',
+          width: '100%',
+          parent: this.rootNode.id,
+          children: []
+        };
+        
+        // 如果行需要添加列
+        if (rowConfig.columnType !== 'none') {
+          // 获取列配置
+          let columnRatios;
+          
+          if (rowConfig.columnType === 'equal') {
+            // 等宽列
+            const columnCount = rowConfig.columns || 2;
+            columnRatios = Array(columnCount).fill(1);
+          } else if (rowConfig.columnType === 'custom' && rowConfig.ratio) {
+            // 自定义比例
+            columnRatios = rowConfig.ratio.split(':').map(r => parseInt(r.trim()) || 1);
+          } else {
+            // 默认添加一个全宽列
+            columnRatios = [1];
+          }
+          
+          // 计算总比例
+          const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
+          
+          // 创建列节点
+          columnRatios.forEach((ratio) => {
+            const percent = (ratio / totalRatio) * 100;
+            const span = Math.round((ratio / totalRatio) * 10);
+            
+            rowNode.children.push({
+              id: uuidv4(),
+              type: 'column',
+              span: span,
+              percentWidth: `${percent.toFixed(2)}%`,
+              height: '100%',
+              parent: rowNode.id,
+              children: []
+            });
+          });
+          
+          // 校正span总和为10
+          this.adjustColumnSpans(rowNode.children);
+        }
+        
+        // 添加行到根节点
+        this.rootNode.children.push(rowNode);
+      });
+      
+      // 保存布局并关闭对话框
+      this.saveLayoutTree(this.rootNode);
+      this.quickLayoutDialogVisible = false;
+      
+      // 显示提示
+      this.$message.success('布局创建成功');
+    },
+    
+    // 更新行配置
+    updateRowConfig(index) {
+      const row = this.quickLayoutConfig.rowConfigs[index];
+      
+      // 重置列宽数组
+      row.columnWidths = [];
+      
+      if (row.columnType === 'equal') {
+        // 等宽列
+        const columns = row.columns || 2;
+        const width = 100 / columns;
+        
+        // 生成等宽列数组
+        for (let i = 0; i < columns; i++) {
+          if (i === columns - 1) {
+            // 最后一列处理浮点数误差，确保总和为100%
+            row.columnWidths.push(parseFloat((100 - width * (columns - 1)).toFixed(2)));
+          } else {
+            row.columnWidths.push(parseFloat(width.toFixed(2)));
+          }
+        }
+        
+        // 更新比例字符串
+        row.ratio = Array(columns).fill('1').join(':');
+      } else if (row.columnType === 'custom' && row.ratio) {
+        // 自定义比例
+        const ratios = row.ratio.split(':').map(r => parseInt(r.trim()) || 1);
+        const total = ratios.reduce((sum, r) => sum + r, 0);
+        
+        // 根据比例计算百分比宽度
+        ratios.forEach((r, i) => {
+          if (i === ratios.length - 1) {
+            // 最后一列处理浮点数误差
+            const sum = row.columnWidths.reduce((s, w) => s + w, 0);
+            row.columnWidths.push(parseFloat((100 - sum).toFixed(2)));
+          } else {
+            row.columnWidths.push(parseFloat(((r / total) * 100).toFixed(2)));
+          }
+        });
+      }
+    },
+    
+    // 处理预设列布局选择变化
+    handlePresetChange() {
+      if (this.quickRowConfig.columnPreset === 'custom') {
+        // 使用自定义比例
+        this.calculateColumnWidths(this.quickRowConfig.customRatio);
+      } else if (this.quickRowConfig.columnPreset === 'none') {
+        // 不分列
+        this.quickRowConfig.columnWidths = [];
+      } else {
+        // 使用预设比例
+        this.calculateColumnWidths(this.quickRowConfig.columnPreset);
+      }
+    },
+    
+    // 计算列宽度百分比
+    calculateColumnWidths(ratioString) {
+      if (!ratioString || ratioString === 'none') {
+        this.quickRowConfig.columnWidths = [];
+        return;
+      }
+      
+      // 解析比例
+      const ratios = ratioString.split(':').map(r => parseInt(r.trim()) || 1);
+      const total = ratios.reduce((sum, r) => sum + r, 0);
+      const widths = [];
+      
+      // 计算百分比宽度
+      let sum = 0;
+      for (let i = 0; i < ratios.length - 1; i++) {
+        const width = parseFloat(((ratios[i] / total) * 100).toFixed(2));
+        widths.push(width);
+        sum += width;
+      }
+      
+      // 最后一列计算，避免小数误差
+      widths.push(parseFloat((100 - sum).toFixed(2)));
+      this.quickRowConfig.columnWidths = widths;
+    },
+    
+    // 重置快速配置
+    clearQuickConfig() {
+      this.quickRowConfig = {
+        rows: 1,
+        columnPreset: '1:1',
+        customRatio: '1:2:1',
+        height: '',
+        columnWidths: [50, 50]
+      };
+    },
+    
+    // 快速添加行布局
+    quickAddRows() {
+      if (!this.rootNode) {
+        this.createRootNode();
+      }
+      
+      if (!this.rootNode.children) {
+        this.rootNode.children = [];
+      }
+      
+      // 获取行数
+      const rowCount = this.quickRowConfig.rows || 1;
+      
+      // 创建行
+      for (let i = 0; i < rowCount; i++) {
+        const rowNode = {
+          id: uuidv4(),
+          type: 'row',
+          height: this.quickRowConfig.height ? `${this.quickRowConfig.height}px` : '',
+          width: '100%',
+          parent: this.rootNode.id,
+          children: []
+        };
+        
+        // 如果需要添加列
+        if (this.quickRowConfig.columnPreset !== 'none' && this.quickRowConfig.columnWidths.length > 0) {
+          // 获取列配置
+          const columnRatios = this.quickRowConfig.columnPreset === 'custom' 
+            ? this.quickRowConfig.customRatio.split(':').map(r => parseInt(r.trim()) || 1)
+            : this.quickRowConfig.columnPreset.split(':').map(r => parseInt(r.trim()) || 1);
+          
+          const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
+          
+          // 创建列
+          columnRatios.forEach((ratio, index) => {
+            const percent = this.quickRowConfig.columnWidths[index];
+            const span = Math.round((ratio / totalRatio) * 10);
+            
+            rowNode.children.push({
+              id: uuidv4(),
+              type: 'column',
+              span: span,
+              percentWidth: `${percent}%`,
+              height: '100%',
+              parent: rowNode.id,
+              children: []
+            });
+          });
+          
+          // 确保span总和为10
+          this.adjustColumnSpans(rowNode.children);
+        }
+        
+        // 添加行到根节点
+        this.rootNode.children.push(rowNode);
+      }
+      
+      // 保存布局
+      this.saveLayoutTree(this.rootNode);
+      
+      // 显示提示
+      this.$message.success(`已添加${rowCount}行布局`);
     }
   },
   watch: {
@@ -1345,6 +1707,26 @@ export default {
       },
       deep: true,
       immediate: true
+    },
+    
+    // 监听快速创建布局中行数的变化
+    'quickLayoutConfig.rows': function(newRows, oldRows) {
+      // 行数增加
+      if (newRows > oldRows) {
+        for (let i = oldRows; i < newRows; i++) {
+          // 默认添加等宽两列的配置
+          this.quickLayoutConfig.rowConfigs.push({
+            columnType: 'equal',
+            columns: 2,
+            columnWidths: [50, 50],
+            ratio: '1:1'
+          });
+        }
+      } 
+      // 行数减少
+      else if (newRows < oldRows) {
+        this.quickLayoutConfig.rowConfigs.splice(newRows, oldRows - newRows);
+      }
     }
   },
   created() {
@@ -1487,14 +1869,19 @@ export default {
     .layout-container {
       .add-layout-controls {
         margin-top: 24px;
-        padding: 16px;
+        padding: 24px;
         background-color: #f9fafc;
         border-radius: 8px;
-        text-align: center;
-        border: 1px dashed #dcdfe6;
+        border: 1px solid #e6e6e6;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         
-        .el-button {
-          padding: 12px 24px;
+        .form-title {
+          font-size: 16px;
+          margin-top: 0;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 1px dashed #dcdfe6;
+          color: #409EFF;
         }
       }
     }
@@ -1966,6 +2353,156 @@ export default {
   
   .el-upload-dragger {
     width: 100% !important;
+  }
+}
+
+/* 快速创建布局对话框样式 */
+.row-config {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  
+  .row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    
+    .row-label {
+      font-weight: 500;
+      color: #606266;
+    }
+  }
+  
+  .column-config {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    .config-label {
+      margin-left: 8px;
+      color: #606266;
+    }
+  }
+  
+  .row-preview {
+    margin-top: 16px;
+    
+    .preview-row {
+      display: flex;
+      height: 40px;
+      background-color: #ecf5ff;
+      border-radius: 4px;
+      overflow: hidden;
+      
+      .preview-col {
+        height: 100%;
+        background-color: #409EFF;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        border-right: 1px solid #ecf5ff;
+        
+        &:last-child {
+          border-right: none;
+        }
+        
+        &:nth-child(even) {
+          background-color: #66b1ff;
+        }
+      }
+    }
+  }
+}
+
+.layout-popover {
+  padding: 0;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+}
+
+.quick-layout-form {
+  padding: 0;
+  
+  .form-row {
+    display: flex;
+    margin-bottom: 15px;
+    gap: 15px;
+    
+    @media (max-width: 600px) {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+  
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    
+    label {
+      width: 65px;
+      font-weight: 500;
+      color: #606266;
+      font-size: 13px;
+    }
+    
+    .el-input-number {
+      width: 100px;
+    }
+    
+    .height-input {
+      flex: 1;
+      
+      .el-input {
+        max-width: 120px;
+      }
+    }
+  }
+  
+  .preview {
+    margin-bottom: 15px;
+    margin-left: 5px;
+    
+    .preview-cols {
+      display: flex;
+      height: 30px;
+      background-color: #ecf5ff;
+      border-radius: 4px;
+      overflow: hidden;
+      
+      .preview-col {
+        height: 100%;
+        background-color: #409EFF;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        border-right: 1px solid #ecf5ff;
+        transition: width 0.3s;
+        
+        &:last-child {
+          border-right: none;
+        }
+        
+        &:nth-child(even) {
+          background-color: #66b1ff;
+        }
+      }
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
   }
 }
 </style>
