@@ -9,6 +9,7 @@ import NewsListWidget2 from '@/components/widgets/NewsListWidget2.vue';
 import NewsListWidget3 from '@/components/widgets/NewsListWidget3.vue';
 import ImageNewsWidget from '@/components/widgets/ImageNewsWidget.vue';
 import HotNewsWidget from '@/components/widgets/HotNewsWidget.vue';
+import NavBarWidget from '@/components/widgets/NavBarWidget.vue';
 
 // mock 数据
 const carouselData = [
@@ -59,12 +60,24 @@ const carouselData = [
   }
 ];
 
+// 导航栏数据
+const navBarData = {
+  menuItems: [
+    { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
+    { label: '总行门户', url: '/', target: '_self', active: true },
+    { label: '分行门户', dropdown: true, active: false },
+    { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
+    { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
+  ]
+};
+
 const mockData = {
   carousel: carouselData,
   headline: carouselData[0],
   newsList: carouselData,
   imageNews: carouselData,
-  hotNews: carouselData
+  hotNews: carouselData,
+  navBar: navBarData
 };
 
 // 注册组件类型
@@ -218,6 +231,22 @@ const widgetTypes = {
       period: 'day',           // 时间周期：day, week, month
       categoryId: 'hot',       // 关联栏目ID
       maxItems: 10             // 最大加载数量
+    }
+  },
+  'nav-bar': {
+    name: '导航栏',
+    icon: 'el-icon-menu',
+    component: NavBarWidget,
+    defaultConfig: {
+      logoUrl: 'https://picsum.photos/200/60?random=1',
+      showSearch: true,
+      menuItems: [
+        { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
+        { label: '总行门户', url: '/', target: '_self', active: true },
+        { label: '分行门户', dropdown: true, active: false },
+        { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
+        { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
+      ]
     }
   }
 };
@@ -376,6 +405,23 @@ const defaultWidgets = [
       period: 'day',
       categoryId: 'hot',
       maxItems: 10
+    }
+  },
+  {
+    id: 'nav-bar-1',
+    name: '导航栏样式1',
+    type: 'nav-bar',
+    description: '导航栏样式1',
+    config: {
+      logoUrl: 'https://picsum.photos/200/60?random=1',
+      showSearch: true,
+      menuItems: [
+        { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
+        { label: '总行门户', url: '/', target: '_self', active: true },
+        { label: '分行门户', dropdown: true, active: false },
+        { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
+        { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
+      ]
     }
   }
 ];

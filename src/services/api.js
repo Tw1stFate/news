@@ -204,5 +204,53 @@ export default {
         }
       }, 300);
     });
+  },
+
+  // 获取分行列表
+  async getBranchList() {
+    // 在实际项目中，这里应该通过API获取分行数据
+    // 此处为了演示，返回模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { id: 1, name: '北京分行', code: 'beijing' },
+          { id: 2, name: '上海分行', code: 'shanghai' },
+          { id: 3, name: '广州分行', code: 'guangzhou' },
+          { id: 4, name: '深圳分行', code: 'shenzhen' },
+          { id: 5, name: '成都分行', code: 'chengdu' },
+          { id: 6, name: '重庆分行', code: 'chongqing' },
+          { id: 7, name: '杭州分行', code: 'hangzhou' },
+          { id: 8, name: '南京分行', code: 'nanjing' },
+          { id: 9, name: '武汉分行', code: 'wuhan' },
+          { id: 10, name: '西安分行', code: 'xian' },
+          { id: 11, name: '长沙分行', code: 'changsha' },
+          { id: 12, name: '青岛分行', code: 'qingdao' },
+          { id: 13, name: '大连分行', code: 'dalian' },
+          { id: 14, name: '济南分行', code: 'jinan' },
+          { id: 15, name: '天津分行', code: 'tianjin' },
+          { id: 16, name: '郑州分行', code: 'zhengzhou' },
+          { id: 17, name: '合肥分行', code: 'hefei' },
+          { id: 18, name: '昆明分行', code: 'kunming' },
+          { id: 19, name: '南宁分行', code: 'nanning' },
+          { id: 20, name: '福州分行', code: 'fuzhou' },
+          { id: 21, name: '厦门分行', code: 'xiamen' },
+          { id: 22, name: '石家庄分行', code: 'shijiazhuang' },
+          { id: 23, name: '太原分行', code: 'taiyuan' },
+          { id: 24, name: '呼和浩特分行', code: 'huhehaote' },
+          { id: 25, name: '沈阳分行', code: 'shenyang' },
+          { id: 26, name: '长春分行', code: 'changchun' },
+          { id: 27, name: '哈尔滨分行', code: 'haerbin' },
+          { id: 28, name: '南昌分行', code: 'nanchang' },
+          { id: 29, name: '贵阳分行', code: 'guiyang' },
+          { id: 30, name: '兰州分行', code: 'lanzhou' },
+          { id: 31, name: '银川分行', code: 'yinchuan' },
+          { id: 32, name: '西宁分行', code: 'xining' },
+          { id: 33, name: '乌鲁木齐分行', code: 'wulumuqi' },
+          { id: 34, name: '拉萨分行', code: 'lasa' },
+          { id: 35, name: '海口分行', code: 'haikou' },
+          { id: 36, name: '苏州分行', code: 'suzhou' }
+        ]);
+      }, 300);
+    });
   }
 }; 
