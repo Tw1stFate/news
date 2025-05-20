@@ -20,12 +20,14 @@
       </div>
       
       <!-- 右侧搜索框 -->
-      <div class="search-area" v-if="config.showSearch">
+      <div class="search-area">
         <el-input
-          placeholder="请输入关键字..."
+          placeholder="请输入关键字搜索..."
           prefix-icon="el-icon-search"
           v-model="searchKeyword"
           @keyup.enter.native="handleSearch"
+          @focus="showSearchDialog"
+          readonly
           size="small"
           class="search-input">
         </el-input>
@@ -53,14 +55,21 @@
         </div>
       </div>
     </transition>
+    
+    <!-- 搜索弹窗 -->
+    <search-dialog :visible.sync="searchDialogVisible" />
   </div>
 </template>
 
 <script>
 import api from '@/services/api';
+import SearchDialog from './SearchDialog.vue';
 
 export default {
   name: 'NavBarWidget',
+  components: {
+    SearchDialog
+  },
   props: {
     config: {
       type: Object,
@@ -77,7 +86,8 @@ export default {
       showBranchMenu: false,
       branchList: [],
       loading: false,
-      mainMenuItems: []
+      mainMenuItems: [],
+      searchDialogVisible: false
     };
   },
   created() {
@@ -137,11 +147,10 @@ export default {
       this.showBranchMenu = false;
     },
     handleSearch() {
-      if (this.searchKeyword.trim()) {
-        console.log('搜索关键字:', this.searchKeyword);
-        // 实现搜索逻辑
-        this.searchKeyword = '';
-      }
+      this.showSearchDialog();
+    },
+    showSearchDialog() {
+      this.searchDialogVisible = true;
     },
     handleOutsideClick(event) {
       // 如果点击的不是本组件内的元素，关闭下拉菜单
@@ -232,18 +241,25 @@ export default {
   
   .search-area {
     flex: 0 0 auto;
-    width: 180px;
+    width: 200px;
+    margin-right: 10px;
     
     .search-input {
       width: 100%;
       
       ::v-deep .el-input__inner {
-        height: 32px;
-        line-height: 32px;
-        border-radius: 16px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 15px;
         padding-left: 30px;
         background-color: #f5f5f5;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #ddd;
+        font-size: 12px;
+        color: #666;
+        
+        &::placeholder {
+          color: #999;
+        }
         
         &:focus {
           border-color: #c00;
@@ -252,7 +268,8 @@ export default {
       
       ::v-deep .el-input__prefix {
         left: 10px;
-        line-height: 32px;
+        line-height: 30px;
+        color: #999;
       }
     }
   }
