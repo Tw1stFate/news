@@ -195,7 +195,7 @@ const api = {
       }, 300);
     });
   },
-
+  
   /**
    * 搜索新闻
    * @param {string} keyword 搜索关键词
@@ -375,6 +375,6 @@ const api = {
       }, 800); // 稍微延长搜索时间，模拟网络请求
     });
   }
-};
+}; 
 
 export default api; 

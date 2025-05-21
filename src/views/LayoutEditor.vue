@@ -3,7 +3,7 @@
     <el-header height="60px" class="editor-header">
       <div class="header-controls">
         <div class="left-area">
-          <h2>新闻门户布局编辑器</h2>
+        <h2>新闻门户布局编辑器</h2>
         </div>
         <div class="right-area">
           <el-button-group class="action-group">
@@ -54,54 +54,56 @@
                 <div class="quick-layout-form">
                   <div class="form-row">
                     <div class="form-group">
-                      <label>行数:</label>
-                      <el-input-number v-model="quickRowConfig.rows" :min="1" :max="5" size="small"></el-input-number>
+                      <div class="label-wrapper">
+                        <label>行数:</label>
+                      </div>
+                      <div class="input-wrapper">
+                        <el-input-number v-model="quickRowConfig.rows" :min="1" :max="5" size="small"></el-input-number>
+                      </div>
                     </div>
                     <div class="form-group">
-                      <label>行高:</label>
-                      <div class="height-input">
-                        <el-input v-model="quickRowConfig.height" size="small" placeholder="例如: 200">
-                          <template slot="append">px</template>
+                      <div class="label-wrapper">
+                        <el-tooltip content="留空表示高度自适应内容，直接输入数值如200即可，单位默认为px" placement="top">
+                          <i class="el-icon-question"></i>
+                        </el-tooltip>
+                        <label>行高:</label>
+                      </div>
+                      <div class="input-wrapper">
+                        <el-input v-model="quickRowConfig.height" size="small" style="width: 100%;" placeholder="默认自适应, 可输入自定义高度(单位px)">
+                          <template slot="suffix">px</template>
                         </el-input>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div class="form-row">
-                    <div class="form-group" style="min-width: 180px;">
-                      <label>列配置:</label>
-                      <el-select v-model="quickRowConfig.columnPreset" size="small" style="width: 160px;" @change="handlePresetChange">
-                        <el-option label="不分列" value="none"></el-option>
-                        <el-option label="等宽一列 (100%)" value="1"></el-option>
-                        <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
-                        <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
-                        <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
-                        <el-option label="两列 (1:2)" value="1:2"></el-option>
-                        <el-option label="自定义" value="custom"></el-option>
-                      </el-select>
-                    </div>
-                    
-                    <div class="preview" v-if="quickRowConfig.columnPreset !== 'none'" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                      <div class="preview-cols">
-                        <div 
-                          v-for="(width, index) in quickRowConfig.columnWidths" 
-                          :key="index" 
-                          class="preview-col"
-                          :style="{ width: width + '%' }">
-                          {{ width }}%
-                        </div>
+                    <div class="form-group">
+                      <div class="label-wrapper">
+                        <label>列配置:</label>
+                      </div>
+                      <div class="input-wrapper">
+                        <el-select v-model="quickRowConfig.columnPreset" size="small" style="width: 100%;" @change="handlePresetChange">
+                          <el-option label="不分列" value="none"></el-option>
+                          <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
+                          <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
+                          <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
+                          <el-option label="两列 (1:2)" value="1:2"></el-option>
+                          <el-option label="自定义" value="custom"></el-option>
+                        </el-select>
                       </div>
                     </div>
                   </div>
                   
                   <div class="form-group" v-if="quickRowConfig.columnPreset === 'custom'" style="margin-top: 10px;">
-                    <label>自定义比例:</label>
-                    <el-input v-model="quickRowConfig.customRatio" size="small" placeholder="例如: 1:2:1" @change="handlePresetChange"></el-input>
+                    <div class="label-wrapper">
+                      <label>自定义:</label>
+                    </div>
+                    <div class="input-wrapper">
+                      <el-input v-model="quickRowConfig.customRatio" size="small" placeholder="例如: 1:2:1" @change="handlePresetChange"></el-input>
+                      <div class="form-tip">使用冒号分隔不同列的宽度比例</div>
+                    </div>
                   </div>
                   
                   <div class="form-actions">
                     <el-button size="small" @click="clearQuickConfig">重置</el-button>
-                    <el-button type="primary" size="small" @click="quickAddRows">创建布局</el-button>
+                    <el-button type="primary" size="small" @click="quickAddRows">添加行</el-button>
                   </div>
                 </div>
               </div>
@@ -109,7 +111,7 @@
           </div>
         </template>
       </div>
-    </div>
+                      </div>
 
     <!-- 组件选择对话框 -->
     <el-dialog
@@ -349,37 +351,23 @@ const LayoutNode = {
     return {
       isHovered: false,
       // 如果是叶子节点，强制显示
-      forceVisible: !this.node.children || this.node.children.length === 0
+      forceVisible: !this.node.children || this.node.children.length === 0,
+      // 添加列配置下拉选项
+      columnPreset: 'none'
     };
   },
   computed: {
     isLeafNode() {
       return !this.node.children || this.node.children.length === 0;
     },
-    nodeTypeLabel() {
-      return this.node.type === 'row' ? '行布局' : '列布局';
-    },
     shouldShowContent() {
       // 如果是叶子节点或者有组件，始终显示内容
       return this.isLeafNode || this.node.widget;
-    },
-    layoutInfoText() {
-      const { type, span, height, percentWidth } = this.node;
-      if (type === 'row') {
-        let info = '宽度: 100%';
-        if (height) {
-          info += `, 高度: ${height}`;
-        }
-        return info;
-      } else if (type === 'column') {
-        let info = percentWidth ? `宽度: ${percentWidth}` : `宽度: ${span || 1}/10`;
-        if (height) {
-          info += `, 高度: ${height}`;
-        }
-        return info;
-      }
-      return '';
     }
+  },
+  created() {
+    // 初始化列配置值
+    this.initColumnPreset();
   },
   methods: {
     handleMouseEnter() {
@@ -416,6 +404,52 @@ const LayoutNode = {
     // 获取组件实例
     getWidgetComponent(type) {
       return WidgetRegistry.get(type);
+    },
+    // 初始化列配置值
+    initColumnPreset() {
+      if (this.node.type !== 'row' || !this.node.children || this.node.children.length === 0) {
+        this.columnPreset = 'none';
+        return;
+      }
+      
+      // 检查子节点是否都是列
+      const columnChildren = this.node.children.filter(child => child.type === 'column');
+      if (columnChildren.length !== this.node.children.length) {
+        this.columnPreset = 'none';
+        return;
+      }
+      
+      // 根据列数和比例判断预设类型
+      const count = columnChildren.length;
+      
+      // 检查是否为等宽列
+      const isEqualWidth = columnChildren.every(col => {
+        return col.percentWidth === columnChildren[0].percentWidth;
+      });
+      
+      if (count === 2 && isEqualWidth) {
+        this.columnPreset = '1:1';
+      } else if (count === 3 && isEqualWidth) {
+        this.columnPreset = '1:1:1';
+      } else if (count === 3) {
+        // 检查是否为1:2:1比例
+        const widths = columnChildren.map(col => parseFloat(col.percentWidth));
+        if (Math.abs(widths[0] - widths[2]) < 1 && Math.abs(widths[1] - (widths[0] * 2)) < 2) {
+          this.columnPreset = '1:2:1';
+        } else {
+          this.columnPreset = 'custom';
+        }
+      } else if (count === 2) {
+        // 检查是否为1:2比例
+        const widths = columnChildren.map(col => parseFloat(col.percentWidth));
+        if (Math.abs(widths[1] - (widths[0] * 2)) < 2) {
+          this.columnPreset = '1:2';
+        } else {
+          this.columnPreset = 'custom';
+        }
+      } else {
+        this.columnPreset = 'custom';
+      }
     }
   },
   render(h) {
@@ -443,7 +477,7 @@ const LayoutNode = {
           flexDirection: (this.node.type === 'row' && hasColumnChildren) ? 'row' : (this.node.type === 'row' ? 'column' : 'row'),
           flexWrap: 'nowrap',
           width: '100%',
-          gap: '16px',
+          gap: '0px',
           overflow: 'hidden' // 防止溢出
         }
       }, 
@@ -501,47 +535,6 @@ const LayoutNode = {
           h('span', {}, '添加组件')
         ]);
       }
-    };
-
-    // 创建节点的操作按钮
-    const renderNodeControls = () => {
-      const buttons = [];
-      
-      // 添加布局按钮（对所有节点都显示）
-      if (this.node.type === 'row') {
-        // 行布局中只能添加列
-        buttons.push(
-          h('el-button', {
-            props: { 
-              type: 'primary',
-              size: 'mini',
-              icon: 'el-icon-s-fold'
-            },
-            on: { click: this.addColumn }
-          }, '添加列')
-        );
-      }
-      
-      // 不是根节点时才显示删除按钮
-      if (!this.isRoot) {
-        buttons.push(
-          h('el-button', {
-            props: { 
-              type: 'danger',
-              size: 'mini',
-              icon: 'el-icon-delete'
-            },
-            on: { click: this.deleteNode }
-          })
-        );
-      }
-      
-      return h('div', { 
-        class: 'node-controls',
-        style: {
-          display: this.isHovered ? 'flex' : 'none'
-        }
-      }, buttons);
     };
 
     // 创建节点样式对象
@@ -608,19 +601,114 @@ const LayoutNode = {
             class: this.node.type === 'row' 
               ? 'el-icon-s-unfold' 
               : 'el-icon-s-grid'
-          }),
-          h('span', { 
-            class: this.node.type === 'row' ? 'row-label' : 'column-label',
-            on: { click: this.showLayoutInfo }
-          }, this.nodeTypeLabel),
-          this.layoutInfoText 
-            ? h('span', { 
-                class: 'layout-info',
-                on: { click: this.showLayoutInfo }
-              }, `(${this.layoutInfoText})`) 
-            : null
+          })
         ]),
-        renderNodeControls()
+        h('div', { class: 'node-controls' }, [
+          // 对于行布局，添加行高输入框和列配置
+          this.node.type === 'row' ? h('div', { class: 'row-settings' }, [
+            // 行高设置
+            h('div', { class: 'setting-item' }, [
+              h('span', { class: 'setting-label' }, '行高:'),
+              h('el-input', {
+                props: {
+                  value: this.node.height || '',
+                  size: 'mini'
+                },
+                attrs: {
+                  placeholder: '自适应'
+                },
+                on: {
+                  input: (val) => {
+                    this.$set(this.node, 'height', val);
+                    // 触发布局更新
+                    this.$root.$emit('layout-updated');
+                  }
+                },
+                style: {
+                  width: '80px'
+                }
+              }, [
+                h('template', { slot: 'suffix' }, 'px')
+              ])
+            ]),
+            // 列配置下拉菜单
+            h('div', { class: 'setting-item' }, [
+              h('span', { class: 'setting-label' }, '列配置:'),
+              h('el-select', {
+                props: {
+                  value: this.columnPreset,
+                  size: 'mini',
+                  placeholder: '选择列配置'
+                },
+                on: {
+                  change: (val) => {
+                    this.columnPreset = val;
+                    if (val === 'none') {
+                      // 不添加列
+                      return;
+                    } else if (val === 'custom') {
+                      // 自定义列配置
+                      this.addColumn();
+                    } else {
+                      // 使用预设列配置
+                      // 解析预设比例
+                      const ratios = val.split(':');
+                      const parent = this.node;
+                      
+                      // 清空现有子节点
+                      parent.children = [];
+                      
+                      // 计算总比例
+                      const totalRatio = ratios.reduce((sum, r) => sum + parseInt(r), 0);
+                      
+                      // 创建列节点
+                      ratios.forEach(ratio => {
+                        const percent = (parseInt(ratio) / totalRatio) * 100;
+                        const span = Math.round((parseInt(ratio) / totalRatio) * 10);
+                        
+                        parent.children.push({
+                          id: uuidv4(),
+                          type: 'column',
+                          span,
+                          percentWidth: `${percent.toFixed(2)}%`,
+                          height: '100%',
+                          parent: parent.id,
+                          children: []
+                        });
+                      });
+                      
+                      // 触发布局更新
+                      this.$root.$emit('layout-updated');
+                    }
+                  }
+                },
+                style: {
+                  width: '120px'
+                }
+              }, [
+                h('el-option', { props: { label: '不分列', value: 'none' } }),
+                h('el-option', { props: { label: '等宽两列 (1:1)', value: '1:1' } }),
+                h('el-option', { props: { label: '等宽三列 (1:1:1)', value: '1:1:1' } }),
+                h('el-option', { props: { label: '三列 (1:2:1)', value: '1:2:1' } }),
+                h('el-option', { props: { label: '两列 (1:2)', value: '1:2' } }),
+                h('el-option', { props: { label: '自定义', value: 'custom' } })
+              ])
+            ])
+          ]) : null,
+          
+          // 不是根节点时显示删除按钮
+          !this.isRoot ? h('el-button', {
+            props: { 
+              type: 'text',
+              size: 'mini',
+              icon: 'el-icon-delete'
+            },
+            style: {
+              color: '#F56C6C'
+            },
+            on: { click: this.deleteNode }
+          }) : null
+        ])
       ]),
       h('div', { 
         class: 'node-content',
@@ -675,10 +763,10 @@ export default {
       },
       quickRowConfig: {
         rows: 1,
-        columnPreset: '1:1',
+        columnPreset: 'none',
         customRatio: '1:2:1',
         height: '',
-        columnWidths: [50, 50]
+        columnWidths: []
       }
     };
   },
@@ -980,7 +1068,7 @@ export default {
         const success = await LayoutUtils.exportLayoutToFile(this.rootNode);
         
         if (success) {
-          this.$message.success('布局配置已导出');
+        this.$message.success('布局配置已导出');
         } else {
           this.$message.error('导出失败');
         }
@@ -1201,7 +1289,7 @@ export default {
       this.importFile = file.raw;
       this.importFileList = [file];
     },
-    
+
     // 新增：显示布局属性设置对话框
     showLayoutPropsDialog(layoutType, parentId) {
       this.layoutPropsDialogVisible = true;
@@ -1621,10 +1709,10 @@ export default {
     clearQuickConfig() {
       this.quickRowConfig = {
         rows: 1,
-        columnPreset: '1:1',
+        columnPreset: 'none',
         customRatio: '1:2:1',
         height: '',
-        columnWidths: [50, 50]
+        columnWidths: []
       };
     },
     
@@ -1746,10 +1834,18 @@ export default {
     this.setDialogWidth();
     // 监听窗口大小变化
     window.addEventListener('resize', this.setDialogWidth);
+    
+    // 监听布局更新事件
+    this.$root.$on('layout-updated', () => {
+      // 保存布局树
+      this.saveLayoutTree(this.rootNode);
+    });
   },
   beforeDestroy() {
     // 移除事件监听
     window.removeEventListener('resize', this.setDialogWidth);
+    // 移除布局更新事件监听
+    this.$root.$off('layout-updated');
   }
 };
 </script>
@@ -1780,12 +1876,12 @@ export default {
       .left-area {
         flex-shrink: 0;
         margin-right: 10px;
-        
-        h2 {
-          margin: 0;
+
+      h2 {
+        margin: 0;
           font-size: 18px;
-          color: #303133;
-          font-weight: 500;
+        color: #303133;
+        font-weight: 500;
           white-space: nowrap;
         }
       }
@@ -1844,7 +1940,7 @@ export default {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 16px;
+    gap: 0px;
 
     .el-icon-s-grid {
       font-size: 60px;
@@ -1864,9 +1960,9 @@ export default {
       border-bottom: 1px solid #ebeef5;
       font-size: 18px;
       color: #303133;
-    }
+  }
 
-    .layout-container {
+  .layout-container {
       .add-layout-controls {
         margin-top: 24px;
         padding: 24px;
@@ -1889,11 +1985,11 @@ export default {
 }
 
 ::v-deep .layout-node {
-  position: relative;
+      position: relative;
   border: 1px dashed #dcdfe6;
-  border-radius: 8px;
+      border-radius: 8px;
   margin: 0;
-  transition: all 0.3s;
+      transition: all 0.3s;
   background-color: #fff;
   box-sizing: border-box; // 确保盒模型计算包含边框和内边距
   overflow: hidden; // 防止子元素溢出
@@ -1911,8 +2007,8 @@ export default {
   
   &.is-hovered {
     border-color: #409EFF;
-    background-color: #ecf5ff;
-  }
+        background-color: #ecf5ff;
+      }
 
   // 不同深度层级颜色区分
   &.depth-0 {
@@ -1959,7 +2055,7 @@ export default {
   }
   
   .node-header {
-    display: flex;
+        display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
@@ -1968,42 +2064,53 @@ export default {
     .node-title {
       display: flex;
       align-items: center;
-      cursor: pointer;
       
       i {
         margin-right: 8px;
         font-size: 16px;
-      }
-      
-      .row-label {
-        font-weight: 500;
-        color: #67c23a;
-      }
-      
-      .column-label {
-        font-weight: 500;
-        color: #409eff;
-      }
-      
-      .layout-info {
-        font-size: 12px;
-        color: #909399;
-        margin-left: 8px;
-        font-weight: normal;
-        
-        &:hover {
-          color: #606266;
-        }
-      }
-      
-      &:hover {
-        opacity: 0.8;
       }
     }
     
     .node-controls {
       display: flex;
       gap: 8px;
+      align-items: center;
+      
+      .row-settings {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-right: 10px;
+        
+        .setting-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          
+          .setting-label {
+            font-size: 13px;
+            color: #606266;
+            white-space: nowrap;
+          }
+          
+          .el-input {
+            min-width: 120px;
+            
+            ::v-deep .el-input .el-input__suffix {
+              display: flex;
+              align-items: center;
+              height: 100%;
+              right: 5px;
+              color: #909399;
+              font-size: 12px;
+            }
+          }
+
+          .el-select {
+            min-width: 150px;
+          }
+        }
+      }
     }
   }
   
@@ -2024,7 +2131,7 @@ export default {
       border: 2px dashed #e4e7ed;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s;
+    transition: all 0.3s;
       background-color: #f9f9f9;
 
       &:hover {
@@ -2091,17 +2198,17 @@ export default {
   .row-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 0px;
     min-height: 60px;
     width: 100%; // 确保宽度占满
     padding: 0; // 移除默认内边距
     margin: 0; // 确保没有外边距
     
     & > .layout-node {
-      margin-bottom: 16px;
+    margin-bottom: 16px;
 
-      &:last-child {
-        margin-bottom: 0;
+    &:last-child {
+      margin-bottom: 0;
       }
     }
   }
@@ -2111,7 +2218,7 @@ export default {
     display: flex !important; // 强制使用flex
     flex-direction: row !important; // 强制横向排列
     flex-wrap: nowrap !important; // 禁止换行
-    gap: 16px;
+    gap: 0px;
     width: 100%;
     min-height: 60px;
     padding: 0; 
@@ -2166,7 +2273,7 @@ export default {
         overflow: hidden;
         background-color: #f5f7fa;
         border-radius: 4px;
-        position: relative;
+      position: relative;
         
         .preview-component {
           transform: scale(0.8);
@@ -2189,7 +2296,7 @@ export default {
 .dialog-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+      align-items: center;
   
   .channel-selection {
     display: flex;
@@ -2202,21 +2309,14 @@ export default {
   text-align: center;
 }
 
-.form-item-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-  line-height: 1.4;
-}
-
 .empty-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   height: 60px;
   background-color: #f5f7fa;
   border-radius: 4px;
-  color: #909399;
+      color: #909399;
   font-style: italic;
   border: 1px dashed #dcdfe6;
   margin: 0; // 移除外边距
@@ -2430,12 +2530,24 @@ export default {
   
   .form-row {
     display: flex;
+    flex-wrap: wrap;
     margin-bottom: 15px;
-    gap: 15px;
+    gap: 20px;
+    
+    .form-group {
+      flex: 1;
+      min-width: 180px;
+      max-width: calc(33.33% - 14px);
+      
+      @media (max-width: 768px) {
+        min-width: 100%;
+        max-width: 100%;
+      }
+    }
     
     @media (max-width: 600px) {
       flex-direction: column;
-      gap: 10px;
+      gap: 15px;
     }
   }
   
@@ -2444,63 +2556,54 @@ export default {
     align-items: center;
     margin-bottom: 0;
     
-    label {
-      width: 65px;
-      font-weight: 500;
-      color: #606266;
-      font-size: 13px;
-    }
-    
-    .el-input-number {
-      width: 100px;
-    }
-    
-    .height-input {
-      flex: 1;
+    .label-wrapper {
+      min-width: 55px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-right: 10px;
       
-      .el-input {
-        max-width: 120px;
+      label {
+        font-weight: 500;
+        color: #606266;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      
+      .el-icon-question {
+        color: #909399;
+        cursor: help;
+        font-size: 14px;
+        margin-right: 2px;
+        
+        &:hover {
+          color: #409EFF;
+        }
       }
     }
-  }
-  
-  .preview {
-    margin-bottom: 15px;
-    margin-left: 5px;
     
-    .preview-cols {
+    .input-wrapper {
+      flex: 1;
       display: flex;
-      height: 30px;
-      background-color: #ecf5ff;
-      border-radius: 4px;
-      overflow: hidden;
+      flex-direction: column;
       
-      .preview-col {
-        height: 100%;
-        background-color: #409EFF;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: bold;
-        border-right: 1px solid #ecf5ff;
-        transition: width 0.3s;
-        
-        &:last-child {
-          border-right: none;
-        }
-        
-        &:nth-child(even) {
-          background-color: #66b1ff;
-        }
+      .form-tip {
+        font-size: 12px;
+        color: #909399;
+        margin-top: 4px;
+      }
+      
+      .el-input-number,
+      .el-input,
+      .el-select {
+        width: 100%;
       }
     }
   }
   
   .form-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 10px;
     margin-top: 15px;
   }
@@ -2578,5 +2681,32 @@ export default {
       }
     }
   }
+}
+
+/* 修复行高输入框中的 px 后缀垂直居中问题 */
+.layout-node .node-controls .row-settings .setting-item .el-input .el-input__suffix {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  right: 5px;
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 修复添加行控制区域中行高输入框的 px 后缀样式 */
+.quick-layout-form .form-group .input-wrapper .el-input .el-input__suffix {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  right: 5px;
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 修复布局属性设置对话框中行高输入框的后缀样式 */
+.el-form-item .el-input .el-input__suffix {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 </style> 
