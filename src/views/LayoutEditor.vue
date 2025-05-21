@@ -69,7 +69,7 @@
                         <label>行高:</label>
                       </div>
                       <div class="input-wrapper">
-                        <el-input v-model="quickRowConfig.height" size="small" style="width: 100%;" placeholder="默认自适应, 可输入自定义高度(单位px)">
+                        <el-input v-model="quickRowConfig.height" size="small" style="width: 100%;" placeholder="默认自适应, 可输入自定义高度">
                           <template slot="suffix">px</template>
                         </el-input>
                       </div>
@@ -644,7 +644,12 @@ const LayoutNode = {
                   change: (val) => {
                     this.columnPreset = val;
                     if (val === 'none') {
-                      // 不添加列
+                      // 不分列 - 清除现有的列节点
+                      const parent = this.node;
+                      // 清空现有子节点
+                      parent.children = [];
+                      // 触发布局更新
+                      this.$root.$emit('layout-updated');
                       return;
                     } else if (val === 'custom') {
                       // 自定义列配置
