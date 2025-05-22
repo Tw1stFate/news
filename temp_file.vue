@@ -2965,31 +2965,3 @@ export default {
   }
 }
 </style>
-<style>
-/* 修复行高输入框中的 px 后缀垂直居中问题 */
-.layout-node .node-controls .row-settings .setting-item .el-input .el-input__suffix {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  right: 5px;
-  color: #909399;
-  font-size: 12px;
-}
-
-/* 修复添加行控制区域中行高输入框的 px 后缀样式 */
-.quick-layout-form .form-group .input-wrapper .el-input .el-input__suffix {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  right: 5px;
-  color: #909399;
-  font-size: 12px;
-}
-
-/* 修复布局属性设置对话框中行高输入框的后缀样式 */
-.el-form-item .el-input .el-input__suffix {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-</style>
