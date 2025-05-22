@@ -35,6 +35,45 @@
     <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
+    
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="图文混排列表组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="120px" size="small">
+        <el-form-item label="组件高度">
+          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <span class="form-tip">像素 (px)</span>
+        </el-form-item>
+        
+        <el-form-item label="标题">
+          <el-input v-model="tempConfig.title" placeholder="请输入栏目标题"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="显示数量">
+          <el-input-number v-model="tempConfig.count" :min="1" :max="10" :step="1"></el-input-number>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="财经新闻" value="finance"></el-option>
+            <el-option label="科技新闻" value="technology"></el-option>
+            <el-option label="文化新闻" value="culture"></el-option>
+            <el-option label="娱乐新闻" value="entertainment"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="最大获取数量">
+          <el-input-number v-model="tempConfig.maxItems" :min="4" :max="10" :step="1"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -54,6 +93,10 @@ export default {
         categoryId: 'finance',
         maxItems: 4
       })
+    },
+    widgetId: {
+      type: String,
+      default: ''
     }
   },
   data() {
@@ -61,7 +104,9 @@ export default {
       indicatorWidth: 0,
       indicatorLeft: 16,
       loading: true,
-      newsItems: []
+      newsItems: [],
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   computed: {
@@ -80,6 +125,8 @@ export default {
   },
   created() {
     this.fetchNews();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchNews() {
@@ -120,6 +167,23 @@ export default {
           this.indicatorLeft = rect.left - parentRect.left;
         }
       });
+    },
+    handleConfigRequest(widget) {
+      if (widget && widget.id === this.widgetId) {
+        this.configDialogVisible = true;
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      }
+    },
+    handleDialogClosed() {
+      this.tempConfig = {};
+    },
+    saveConfig() {
+      // 向父组件传递配置更新消息
+      this.$root.$emit('widget-config-updated', {
+        widgetId: this.widgetId,
+        config: this.tempConfig
+      });
+      this.configDialogVisible = false;
     }
   },
   mounted() {
@@ -130,6 +194,7 @@ export default {
   beforeDestroy() {
     // 移除事件监听
     window.removeEventListener('resize', this.updateIndicatorWidth);
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   }
 };
 </script>

@@ -29,6 +29,41 @@
     <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
+
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="新闻列表组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="100px" size="small">
+        <el-form-item label="标题">
+          <el-input v-model="tempConfig.title" placeholder="请输入标题"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="显示数量">
+          <el-input-number v-model="tempConfig.limit" :min="1" :max="20" :step="1"></el-input-number>
+          <span class="form-tip">条新闻</span>
+        </el-form-item>
+        
+        <el-form-item label="显示日期">
+          <el-switch v-model="tempConfig.showDate"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="底部分页">
+          <el-switch v-model="tempConfig.showPagination"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="每页显示">
+          <el-input-number v-model="tempConfig.pageSize" :min="5" :max="20" :step="5" :disabled="!tempConfig.showPagination"></el-input-number>
+          <span class="form-tip">条/页</span>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -49,12 +84,24 @@ export default {
         categoryId: 'domestic',
         maxItems: 6
       })
+    },
+    channelId: {
+      type: String,
+      default: ''
+    },
+    widgetId: {
+      type: String,
+      default: ''
     }
   },
   data() {
     return {
       loading: true,
-      newsItems: []
+      newsItems: [],
+      total: 0,
+      currentPage: 1,
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   computed: {
@@ -63,7 +110,15 @@ export default {
     }
   },
   watch: {
-    // 当配置变化时，重新获取数据
+    channelId: {
+      handler() {
+        this.fetchNews();
+      },
+      immediate: true
+    },
+    currentPage() {
+      this.fetchNews();
+    },
     config: {
       handler() {
         this.fetchNews();
@@ -73,19 +128,31 @@ export default {
   },
   created() {
     this.fetchNews();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchNews() {
+      if (!this.channelId) return;
+      
       this.loading = true;
       try {
-        // 从API获取新闻数据
-        this.newsItems = await api.getNewsByCategory(
-          this.config.categoryId || 'domestic',
-          this.config.maxItems || 6
+        const result = await api.getNewsByChannel(
+          this.channelId, 
+          this.currentPage, 
+          this.config.showPagination ? this.config.pageSize : this.config.limit
         );
+        
+        this.newsItems = result.items || [];
+        this.total = result.total || 0;
       } catch (error) {
         console.error('获取新闻列表失败:', error);
         this.newsItems = [];
+        this.total = 0;
       } finally {
         this.loading = false;
       }
@@ -97,6 +164,28 @@ export default {
     },
     handleMoreClick() {
       this.$emit('more-click', this.config.categoryId || 'domestic');
+    },
+    // 处理组件配置请求
+    handleConfigRequest(widget) {
+      // 检查是否是当前组件的配置请求
+      if (widget && widget.id === this.widgetId && widget.type === 'news-list-1') {
+        // 复制当前配置到临时配置对象
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+        // 显示配置对话框
+        this.configDialogVisible = true;
+      }
+    },
+    // 保存配置
+    saveConfig() {
+      // 触发配置更新事件
+      this.$root.$emit('widget-config-updated', this.widgetId, this.tempConfig);
+      // 关闭对话框
+      this.configDialogVisible = false;
+    },
+    // 对话框关闭处理
+    handleDialogClosed() {
+      // 清空临时配置
+      this.tempConfig = {};
     }
   }
 };

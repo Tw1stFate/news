@@ -28,6 +28,49 @@
     <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
+
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="红标题+时间列表组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="120px" size="small">
+        <el-form-item label="组件高度">
+          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <span class="form-tip">像素 (px)</span>
+        </el-form-item>
+        
+        <el-form-item label="标题">
+          <el-input v-model="tempConfig.title" placeholder="请输入栏目标题"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="显示数量">
+          <el-input-number v-model="tempConfig.count" :min="1" :max="20" :step="1"></el-input-number>
+        </el-form-item>
+        
+        <el-form-item label="显示日期">
+          <el-switch v-model="tempConfig.showDate"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="国内新闻" value="domestic"></el-option>
+            <el-option label="国际新闻" value="international"></el-option>
+            <el-option label="财经新闻" value="finance"></el-option>
+            <el-option label="科技新闻" value="technology"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="最大获取数量">
+          <el-input-number v-model="tempConfig.maxItems" :min="5" :max="20" :step="1"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -48,12 +91,18 @@ export default {
         categoryId: 'domestic',
         maxItems: 7
       })
+    },
+    widgetId: {
+      type: String,
+      default: ''
     }
   },
   data() {
     return {
       loading: true,
-      newsItems: []
+      newsItems: [],
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   computed: {
@@ -72,6 +121,12 @@ export default {
   },
   created() {
     this.fetchNews();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchNews() {
@@ -96,6 +151,23 @@ export default {
     },
     handleMoreClick() {
       this.$emit('more-click', this.config.categoryId || 'domestic');
+    },
+    handleConfigRequest(widget) {
+      if (widget && widget.id === this.widgetId) {
+        this.configDialogVisible = true;
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      }
+    },
+    handleDialogClosed() {
+      this.tempConfig = {};
+    },
+    saveConfig() {
+      // 向父组件传递配置更新消息
+      this.$root.$emit('widget-config-updated', {
+        widgetId: this.widgetId,
+        config: this.tempConfig
+      });
+      this.configDialogVisible = false;
     }
   }
 };

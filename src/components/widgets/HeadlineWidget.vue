@@ -9,6 +9,37 @@
     <div v-else class="empty-headline">
       <el-empty description="暂无头条新闻" :image-size="60"></el-empty>
     </div>
+    
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="头条新闻组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="120px" size="small">
+        <el-form-item label="样式类型">
+          <el-select v-model="tempConfig.styleType" placeholder="选择样式类型">
+            <el-option label="默认样式" value="default"></el-option>
+            <el-option label="主题色" value="primary"></el-option>
+            <el-option label="成功色" value="success"></el-option>
+            <el-option label="警告色" value="warning"></el-option>
+            <el-option label="危险色" value="danger"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="头条新闻" value="headlines"></el-option>
+            <el-option label="要闻" value="important"></el-option>
+            <el-option label="公告" value="announcements"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -26,12 +57,18 @@ export default {
         categoryId: 'headlines',
         maxItems: 1
       })
+    },
+    widgetId: {
+      type: String,
+      default: ''
     }
   },
   data() {
     return {
       loading: true,
-      headline: null
+      headline: null,
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   watch: {
@@ -45,6 +82,12 @@ export default {
   },
   created() {
     this.fetchHeadline();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchHeadline() {
@@ -62,6 +105,23 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    handleConfigRequest(widget) {
+      if (widget && widget.id === this.widgetId) {
+        this.configDialogVisible = true;
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      }
+    },
+    handleDialogClosed() {
+      this.tempConfig = {};
+    },
+    saveConfig() {
+      // 向父组件传递配置更新消息
+      this.$root.$emit('widget-config-updated', {
+        widgetId: this.widgetId,
+        config: this.tempConfig
+      });
+      this.configDialogVisible = false;
     }
   }
 };

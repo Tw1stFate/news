@@ -23,6 +23,43 @@
         </div>
       </div>
     </div>
+    
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="热门新闻组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="120px" size="small">
+        <el-form-item label="标题">
+          <el-input v-model="tempConfig.title" placeholder="请输入栏目标题"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="时间周期">
+          <el-select v-model="tempConfig.period" placeholder="选择时间周期">
+            <el-option label="今日" value="day"></el-option>
+            <el-option label="本周" value="week"></el-option>
+            <el-option label="本月" value="month"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="显示数量">
+          <el-input-number v-model="tempConfig.maxItems" :min="5" :max="20" :step="1"></el-input-number>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="热门新闻" value="hot"></el-option>
+            <el-option label="国内新闻" value="domestic"></el-option>
+            <el-option label="国际新闻" value="international"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -38,14 +75,21 @@ export default {
       default: () => ({
         title: '热门新闻',
         maxItems: 10,
-        period: 'day'
-      })
+        period: 'day',
+        categoryId: 'hot'
+      }),
+      widgetId: {
+        type: String,
+        default: ''
+      }
     }
   },
   data() {
     return {
       loading: true,
-      hotNews: []
+      hotNews: [],
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   computed: {
@@ -70,6 +114,12 @@ export default {
   },
   created() {
     this.fetchHotNews();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchHotNews() {
@@ -91,6 +141,23 @@ export default {
     // 判断是否是前三名
     isTopThree(index) {
       return index < 3;
+    },
+    handleConfigRequest(widget) {
+      if (widget && widget.id === this.widgetId) {
+        this.configDialogVisible = true;
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      }
+    },
+    handleDialogClosed() {
+      this.tempConfig = {};
+    },
+    saveConfig() {
+      // 向父组件传递配置更新消息
+      this.$root.$emit('widget-config-updated', {
+        widgetId: this.widgetId,
+        config: this.tempConfig
+      });
+      this.configDialogVisible = false;
     }
   }
 };

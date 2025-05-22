@@ -121,28 +121,50 @@
       width="80%"
       :before-close="handleCloseWidgetDialog">
       <div class="widget-selection">
-        <div class="widget-group" v-for="(group, groupName) in groupedWidgets" :key="groupName">
-          <h3 class="group-title">{{ groupName }}</h3>
-          <el-row :gutter="20">
-            <el-col :span="12" v-for="widget in group" :key="widget.id">
-              <el-card 
-                class="widget-card" 
-                :class="{ 'is-selected': selectedWidgetId === widget.id }"
-                @click.native="selectWidget(widget)">
-                <div class="preview-area">
+        <el-tabs v-model="activeWidgetCategory" type="card">
+          <el-tab-pane 
+            v-for="category in widgetCategories" 
+            :key="category" 
+            :label="category" 
+            :name="category">
+            
+            <el-row :gutter="20">
+              <!-- 导航栏组件需要占用完整一行 -->
+              <el-col 
+                v-for="widget in getWidgetsByCategory(category)" 
+                :key="widget.id"
+                :span="category === '导航栏' ? 24 : 12">
+                
+                <div class="widget-container">
+                  <div class="widget-header">
+                    <h4>{{ widget.name }}</h4>
+                    <el-button 
+                      v-if="selectedWidgetId === widget.id"
+                      type="primary" 
+                      size="mini" 
+                      icon="el-icon-setting"
+                      @click="showWidgetSettings(widget)">设置</el-button>
+                  </div>
+                  <el-card 
+                    class="widget-card" 
+                    :class="{ 'is-selected': selectedWidgetId === widget.id }"
+                    @click.native="selectWidget(widget)">
+                    <div class="preview-area">
                       <component 
                         :is="getWidgetComponent(widget.type)"
-                    :config="widget.config"
-                    class="preview-component" />
+                        :config="widget.config"
+                        class="preview-component" />
                     </div>
-                <div class="widget-info text-center">
-                  <h4>{{ widget.name }}</h4>
+                  </el-card>
+                  <div class="widget-description">
+                    <p>{{ widget.description }}</p>
                   </div>
-              </el-card>
+                </div>
               </el-col>
             </el-row>
-          </div>
-        </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
       <div slot="footer" class="dialog-footer">
         <div class="channel-selection" v-if="selectedWidgetId">
           <span>关联栏目：</span>
@@ -159,6 +181,20 @@
         <el-button type="primary" @click="confirmWidgetSelection" :disabled="!selectedWidgetId">确定</el-button>
       </div>
     </el-dialog>
+
+    <!-- 组件设置对话框 -->
+    <!-- 每个组件将负责实现自己的配置对话框 -->
+    <!-- 
+      配置变更说明：
+      1. 移除了全局的WidgetConfigDialog组件
+      2. 每个组件单独实现自己的配置对话框
+      3. 通过事件总线触发配置请求和更新
+      4. 事件流程：
+        - 点击组件设置按钮 -> 触发 widget-config-requested 事件
+        - 组件监听此事件并打开自己的配置对话框
+        - 保存配置时触发 widget-config-updated 事件
+        - LayoutEditor监听widget-config-updated事件并通过handleWidgetConfigUpdate方法更新组件配置
+    -->
 
     <!-- 布局属性设置对话框 -->
     <el-dialog
@@ -393,6 +429,12 @@ const LayoutNode = Vue.component('layout-node', {
     selectWidget() {
       this.$emit('select-widget', this.node.id);
     },
+    showWidgetSettings() {
+      // 向父组件发送显示组件设置请求
+      if (this.node.widget) {
+        this.$root.$emit('widget-config-requested', this.node.widget);
+      }
+    },
     moveRowUp() {
       this.$emit('move-row', { id: this.node.id, direction: 'up' });
     },
@@ -523,14 +565,53 @@ const LayoutNode = Vue.component('layout-node', {
         return h('div', { class: 'node-widget' }, [
           h('div', { class: 'widget-info' }, [
             h('span', { class: 'widget-name' }, `组件: ${this.node.widget.name}`),
-            h('span', { class: 'channel-name' }, `栏目: ${this.node.channelName || '未设置'}`)
+            h('div', { class: 'widget-actions' }, [
+              // 组件设置按钮
+              h('el-button', {
+                props: { 
+                  type: 'text',
+                  size: 'mini',
+                  icon: 'el-icon-setting'
+                },
+                style: {
+                  color: '#409EFF',
+                  marginRight: '5px'
+                },
+                on: { 
+                  click: (e) => {
+                    e.stopPropagation();
+                    this.showWidgetSettings();
+                  } 
+                }
+              }, '设置'),
+              
+              // 重新选择样式按钮
+              h('el-button', {
+                props: { 
+                  type: 'text',
+                  size: 'mini',
+                  icon: 'el-icon-refresh'
+                },
+                style: {
+                  color: '#67C23A',
+                  marginRight: '5px'
+                },
+                on: { 
+                  click: (e) => {
+                    e.stopPropagation();
+                    this.selectWidget();
+                  } 
+                }
+              }, '选择样式')
+            ])
           ]),
           h('div', { class: 'widget-preview' }, [
             // 渲染实际组件
             h(this.getWidgetComponent(this.node.widget.type), {
               props: {
                 config: this.node.widget.config || {},
-                channelId: this.node.channelId
+                channelId: this.node.channelId,
+                widgetId: this.node.widget.id
               },
               class: 'preview-component'
             })
@@ -552,11 +633,14 @@ const LayoutNode = Vue.component('layout-node', {
     // 创建节点标题
     const renderNodeTitle = () => {
       let title = '';
+      let icon = null;
       
       if (this.node.type === 'row') {
         title = '行布局';
+        icon = 'el-icon-menu'; // 横向图标表示行
       } else if (this.node.type === 'column') {
         title = '列布局';
+        icon = 'el-icon-s-grid'; // 网格图标表示列
       }
       
       if (this.node.widget) {
@@ -564,6 +648,7 @@ const LayoutNode = Vue.component('layout-node', {
       }
       
       return h('div', { class: 'node-title' }, [
+        icon ? h('i', { class: icon, style: { marginRight: '5px', fontSize: '16px' } }) : null,
         h('span', {}, title),
         this.node.height ? h('span', { class: 'node-height' }, `高度: ${this.node.height}`) : null
       ]);
@@ -627,8 +712,18 @@ const LayoutNode = Vue.component('layout-node', {
         mouseleave: this.handleMouseLeave
       }
     }, [
+      // 行布局显示完整header，列布局显示精简header
       h('div', { class: 'node-header' }, [
-        renderNodeTitle(),
+        this.node.type === 'row' ? (
+          // 行布局标题
+          renderNodeTitle()
+        ) : (
+          // 列布局标题 - 只显示图标
+          h('div', { class: 'node-title column-title' }, [
+            h('i', { class: 'el-icon-s-grid', style: { marginRight: '5px', fontSize: '16px' } }),
+            h('span', {}, '列布局')
+          ])
+        ),
         h('div', { class: 'node-controls' }, [
           // 对于行布局，添加行高输入框和列配置
           this.node.type === 'row' ? h('div', { class: 'row-settings' }, [
@@ -810,7 +905,9 @@ export default {
       widgetDialogVisible: false,
       selectedNodeId: null,
       selectedWidgetId: null,
+      selectedWidget: null,
       selectedChannelId: null,
+      activeWidgetCategory: '轮播图', // 默认激活的组件分类
       layoutPropsDialogVisible: false,
       newLayoutType: 'row',
       newLayoutParentId: null,
@@ -885,11 +982,16 @@ export default {
       }
       
       return groups;
+    },
+    
+    // 组件分类列表
+    widgetCategories() {
+      return WidgetRegistry.getCategories();
     }
   },
   methods: {
     ...mapActions('widget', ['fetchWidgets']),
-    ...mapActions('channel', ['fetchChannels']),
+    ...mapActions('channel', ['fetchChannels', 'fetchCategories']),
     ...mapActions('layout', ['saveLayoutTree', 'loadLayoutTree']),
     
     // 创建根节点
@@ -1916,6 +2018,27 @@ export default {
       
       // 显示提示
       this.$message.success(`已添加${rowCount}行布局`);
+    },
+    
+    // 根据分类获取组件
+    getWidgetsByCategory(category) {
+      return this.widgets.filter(widget => widget.category === category);
+    },
+    
+    // 显示组件设置对话框
+    showWidgetSettings(widget) {
+      // 每个组件将负责实现自己的配置对话框
+      // 通过事件总线触发组件配置事件
+      this.$root.$emit('widget-config-requested', widget);
+    },
+    
+    // 处理组件配置更新
+    handleWidgetConfigUpdate(newConfig) {
+      // 找到当前选中的组件并更新配置
+      const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
+      if (widget) {
+        widget.config = { ...newConfig };
+      }
     }
   },
   watch: {
@@ -1959,6 +2082,7 @@ export default {
     // 加载组件和栏目数据
     this.fetchWidgets();
     this.fetchChannels();
+    this.fetchCategories();
     
     // 尝试从vuex加载已保存的布局
     this.loadLayoutTree().then(layoutTree => {
@@ -1978,12 +2102,19 @@ export default {
       // 保存布局树
       this.saveLayoutTree(this.rootNode);
     });
+    
+    // 监听组件配置更新事件
+    this.$root.$on('widget-config-updated', (widgetId, newConfig) => {
+      this.handleWidgetConfigUpdate(widgetId, newConfig);
+    });
   },
   beforeDestroy() {
     // 移除事件监听
     window.removeEventListener('resize', this.setDialogWidth);
     // 移除布局更新事件监听
     this.$root.$off('layout-updated');
+    // 移除组件配置更新事件监听
+    this.$root.$off('widget-config-updated');
   }
 };
 </script>
@@ -2174,16 +2305,44 @@ export default {
       background-color: rgba(103, 194, 58, 0.1);
       border-color: #67c23a;
     }
+    
+    .node-header {
+      background-color: rgba(103, 194, 58, 0.08);
+      
+      .node-title {
+        i {
+          color: #67c23a;
+        }
+      }
+    }
   }
   
   &.node-column {
     border-left: 4px solid #409eff;
     height: 100%; // 列布局高度占满
     background-color: rgba(64, 158, 255, 0.05);
+    border-top: 1px dashed #409eff;
+    border-bottom: 1px dashed #409eff;
     
     &.is-hovered {
       background-color: rgba(64, 158, 255, 0.1);
       border-color: #409eff;
+    }
+    
+    .node-header {
+      padding: 4px 8px;
+      background-color: rgba(64, 158, 255, 0.1);
+      border-bottom: 1px dashed #c9e0ff;
+      
+      .node-controls {
+        display: flex;
+        justify-content: flex-end;
+        
+        .action-buttons {
+          display: flex;
+          margin-left: 0;
+        }
+      }
     }
   }
   
@@ -2219,6 +2378,16 @@ export default {
         margin-left: 15px;
         display: flex;
         align-items: center;
+      }
+      
+      &.column-title {
+        font-size: 13px;
+        color: #409EFF;
+        
+        i {
+          color: #409EFF;
+          font-size: 14px;
+        }
       }
     }
     
@@ -2322,14 +2491,22 @@ export default {
       .widget-info {
         display: flex !important;
         justify-content: space-between;
+        align-items: center;
         margin-bottom: 12px;
+        padding: 8px 12px;
+        background-color: #ecf5ff;
+        border-radius: 4px;
+        border: 1px dashed #c2e1ff;
         
         .widget-name {
           font-weight: 500;
+          color: #409EFF;
+          font-size: 14px;
         }
         
-        .channel-name {
-          color: #909399;
+        .widget-actions {
+          display: flex;
+          align-items: center;
         }
       }
       
@@ -2341,6 +2518,8 @@ export default {
         background-color: #fff;
         border-radius: 4px;
         overflow: hidden;
+        border: 1px solid #ebeef5;
+        padding: 8px;
         
         .preview-component {
           width: 100%;
@@ -2400,18 +2579,28 @@ export default {
   max-height: 60vh;
   overflow-y: auto;
   
-  .widget-group {
-    margin-bottom: 24px;
+  .widget-container {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     
-    .group-title {
-      margin-top: 0;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #ebeef5;
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      
+      h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+      }
     }
     
     .widget-card {
-      margin-bottom: 16px;
+      flex: 1;
+      margin-bottom: 8px;
       cursor: pointer;
       transition: all 0.3s;
       
@@ -2430,21 +2619,23 @@ export default {
         overflow: hidden;
         background-color: #f5f7fa;
         border-radius: 4px;
-      position: relative;
+        position: relative;
+        pointer-events: none; // 阻止点击事件，使组件不可交互
         
         .preview-component {
           transform: scale(0.8);
           transform-origin: top left;
         }
       }
+    }
+    
+    .widget-description {
+      color: #606266;
+      font-size: 13px;
+      line-height: 1.4;
       
-      .widget-info {
-        margin-top: 12px;
-        
-        h4 {
-          margin: 0;
-          font-size: 14px;
-        }
+      p {
+        margin: 0;
       }
     }
   }
@@ -2453,7 +2644,7 @@ export default {
 .dialog-footer {
   display: flex;
   justify-content: space-between;
-      align-items: center;
+  align-items: center;
   
   .channel-selection {
     display: flex;
@@ -2866,4 +3057,5 @@ export default {
   align-items: center;
   height: 100%;
 }
+</style> 
 </style> 

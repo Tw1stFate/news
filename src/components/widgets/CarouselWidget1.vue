@@ -42,6 +42,50 @@
     <div v-else class="empty-carousel">
       <el-empty description="暂无轮播数据"></el-empty>
     </div>
+    
+    <!-- 组件配置对话框 -->
+    <el-dialog
+      title="轮播组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="100px" size="small">
+        <el-form-item label="轮播高度">
+          <el-input-number v-model="tempConfig.height" :min="150" :max="600" :step="10"></el-input-number>
+          <span class="form-tip">像素 (px)</span>
+        </el-form-item>
+        
+        <el-form-item label="轮播间隔">
+          <el-input-number v-model="tempConfig.interval" :min="1000" :max="10000" :step="500"></el-input-number>
+          <span class="form-tip">毫秒</span>
+        </el-form-item>
+        
+        <el-form-item label="自动播放">
+          <el-switch v-model="tempConfig.autoplay"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="显示标题">
+          <el-switch v-model="tempConfig.showTitle"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="头条新闻" value="headlines"></el-option>
+            <el-option label="热点要闻" value="trending"></el-option>
+            <el-option label="社会新闻" value="social"></el-option>
+            <el-option label="国际新闻" value="international"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="最大条数">
+          <el-input-number v-model="tempConfig.maxItems" :min="1" :max="10" :step="1"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -62,13 +106,19 @@ export default {
         categoryId: 'headlines',
         maxItems: 5
       })
+    },
+    widgetId: {
+      type: String,
+      default: ''
     }
   },
   data() {
     return {
       currentIndex: 0,
       loading: true,
-      items: []
+      items: [],
+      configDialogVisible: false,
+      tempConfig: {}
     }
   },
   computed: {
@@ -87,6 +137,12 @@ export default {
   },
   created() {
     this.fetchData();
+    // 监听组件配置请求事件
+    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+  },
+  beforeDestroy() {
+    // 移除事件监听
+    this.$root.$off('widget-config-requested', this.handleConfigRequest);
   },
   methods: {
     async fetchData() {
@@ -112,6 +168,28 @@ export default {
       if (event) event.preventDefault();
       this.currentIndex = index;
       this.$refs.carousel.setActiveItem(index);
+    },
+    // 处理组件配置请求
+    handleConfigRequest(widget) {
+      // 检查是否是当前组件的配置请求
+      if (widget && widget.id === this.widgetId && widget.type === 'carousel-1') {
+        // 复制当前配置到临时配置对象
+        this.tempConfig = JSON.parse(JSON.stringify(this.config));
+        // 显示配置对话框
+        this.configDialogVisible = true;
+      }
+    },
+    // 保存配置
+    saveConfig() {
+      // 触发配置更新事件
+      this.$root.$emit('widget-config-updated', this.widgetId, this.tempConfig);
+      // 关闭对话框
+      this.configDialogVisible = false;
+    },
+    // 对话框关闭处理
+    handleDialogClosed() {
+      // 清空临时配置
+      this.tempConfig = {};
     }
   }
 };
@@ -207,5 +285,11 @@ export default {
 
 :deep(.el-carousel__indicators) {
   display: none;
+}
+
+.form-tip {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 </style> 
