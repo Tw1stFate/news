@@ -80,10 +80,23 @@ const mockData = {
   navBar: navBarData
 };
 
+// 组件分组定义
+const widgetGroups = [
+  '导航栏',
+  '轮播图',
+  '文字列表',
+  '图文列表',
+  '友情链接',
+  '排行榜',
+  '图片走廊',
+  '跑马灯'
+];
+
 // 注册组件类型
 const widgetTypes = {
   'carousel-1': {
     name: '轮播图样式1',
+    group: '轮播图',
     icon: 'el-icon-picture',
     component: CarouselWidget1,
     defaultConfig: {
@@ -100,6 +113,7 @@ const widgetTypes = {
   },
   'carousel-2': {
     name: '轮播图样式2',
+    group: '轮播图',
     icon: 'el-icon-picture',
     component: CarouselWidget2,
     defaultConfig: {
@@ -113,6 +127,7 @@ const widgetTypes = {
   },
   'carousel-3': {
     name: '轮播图样式3',
+    group: '轮播图',
     icon: 'el-icon-picture',
     component: CarouselWidget3,
     defaultConfig: {
@@ -126,6 +141,7 @@ const widgetTypes = {
   },
   headline: {
     name: '头条新闻',
+    group: '文字列表',
     icon: 'el-icon-news',
     component: HeadlineWidget,
     defaultConfig: {
@@ -136,6 +152,7 @@ const widgetTypes = {
   },
   'news-list': {
     name: '新闻列表',
+    group: '文字列表',
     icon: 'el-icon-document',
     component: NewsListWidget,
     defaultConfig: {
@@ -148,6 +165,7 @@ const widgetTypes = {
   },
   'news-list-1': {
     name: '列表样式1',
+    group: '文字列表',
     icon: 'el-icon-document',
     component: NewsListWidget1,
     defaultConfig: {
@@ -161,6 +179,7 @@ const widgetTypes = {
   },
   'news-list-2': {
     name: '列表样式2',
+    group: '文字列表',
     icon: 'el-icon-document',
     component: NewsListWidget2,
     defaultConfig: {
@@ -174,6 +193,7 @@ const widgetTypes = {
   },
   'news-list-3': {
     name: '列表样式3',
+    group: '图文列表',
     icon: 'el-icon-document',
     component: NewsListWidget3,
     defaultConfig: {
@@ -186,6 +206,7 @@ const widgetTypes = {
   },
   'news-list-4': {
     name: '列表样式4',
+    group: '图文列表',
     icon: 'el-icon-document',
     component: NewsListWidget,
     defaultConfig: {
@@ -199,6 +220,7 @@ const widgetTypes = {
   },
   'news-list-5': {
     name: '列表样式5',
+    group: '文字列表',
     icon: 'el-icon-document',
     component: NewsListWidget,
     defaultConfig: {
@@ -212,6 +234,7 @@ const widgetTypes = {
   },
   'image-news': {
     name: '图片新闻',
+    group: '图片走廊',
     icon: 'el-icon-picture-outline',
     component: ImageNewsWidget,
     defaultConfig: {
@@ -223,6 +246,7 @@ const widgetTypes = {
   },
   'hot-news': {
     name: '热点排行',
+    group: '排行榜',
     icon: 'el-icon-trophy',
     component: HotNewsWidget,
     defaultConfig: {
@@ -235,6 +259,7 @@ const widgetTypes = {
   },
   'nav-bar': {
     name: '导航栏',
+    group: '导航栏',
     icon: 'el-icon-menu',
     component: NavBarWidget,
     defaultConfig: {
@@ -257,6 +282,7 @@ const defaultWidgets = [
     id: 'carousel-1',
     name: '轮播图样式1',
     type: 'carousel-1',
+    group: '轮播图',
     description: '自动播放大图展示',
     config: {
       height: 300,
@@ -274,6 +300,7 @@ const defaultWidgets = [
     id: 'carousel-2',
     name: '轮播图样式2',
     type: 'carousel-2',
+    group: '轮播图',
     description: '手动切换，缩略图导航',
     config: {
       height: 360,
@@ -288,6 +315,7 @@ const defaultWidgets = [
     id: 'carousel-3',
     name: '轮播图样式3',
     type: 'carousel-3',
+    group: '轮播图',
     description: '左图右文，标题列表',
     config: {
       height: 360,
@@ -302,6 +330,7 @@ const defaultWidgets = [
     id: 'news-list-1',
     name: '列表样式1',
     type: 'news-list-1',
+    group: '文字列表',
     description: '带项目符号的标题列表',
     config: {
       height: 400,
@@ -316,6 +345,7 @@ const defaultWidgets = [
     id: 'news-list-2',
     name: '列表样式2',
     type: 'news-list-2',
+    group: '文字列表',
     description: '简洁标题日期列表',
     config: {
       height: 330,
@@ -330,6 +360,7 @@ const defaultWidgets = [
     id: 'news-list-3',
     name: '列表样式3',
     type: 'news-list-3',
+    group: '图文列表',
     description: '图文列表',
     config: {
       height: 400,
@@ -343,6 +374,7 @@ const defaultWidgets = [
     id: 'news-list-4',
     name: '列表样式4',
     type: 'news-list',
+    group: '图文列表',
     description: '图文混排列表',
     config: {
       height: 400,
@@ -357,6 +389,7 @@ const defaultWidgets = [
     id: 'news-list-5',
     name: '列表样式5',
     type: 'news-list',
+    group: '文字列表',
     description: '纯文字列表',
     config: {
       height: 360,
@@ -371,6 +404,7 @@ const defaultWidgets = [
     id: 'image-news-1',
     name: '图片样式1',
     type: 'image-news',
+    group: '图片走廊',
     description: '网格布局',
     config: {
       height: 360,
@@ -384,6 +418,7 @@ const defaultWidgets = [
     id: 'image-news-2',
     name: '图片样式2',
     type: 'image-news',
+    group: '图片走廊',
     description: '瀑布流布局',
     config: {
       height: 400,
@@ -397,6 +432,7 @@ const defaultWidgets = [
     id: 'hot-news-1',
     name: '排行样式1',
     type: 'hot-news',
+    group: '排行榜',
     description: '带序号排行',
     config: {
       height: 360,
@@ -411,6 +447,7 @@ const defaultWidgets = [
     id: 'nav-bar-1',
     name: '导航栏样式1',
     type: 'nav-bar',
+    group: '导航栏',
     description: '导航栏样式1',
     config: {
       logoUrl: 'https://picsum.photos/200/60?random=1',
@@ -430,14 +467,24 @@ class WidgetRegistry {
   constructor() {
     this.types = widgetTypes;
     this.defaultWidgets = defaultWidgets;
+    this.groups = widgetGroups;
   }
 
   getTypes() {
     return Object.entries(this.types).map(([type, config]) => ({
       type,
       name: config.name,
+      group: config.group,
       icon: config.icon
     }));
+  }
+
+  getGroups() {
+    return this.groups;
+  }
+
+  getWidgetsByGroup(group) {
+    return this.defaultWidgets.filter(widget => widget.group === group);
   }
 
   get(type) {

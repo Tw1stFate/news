@@ -46,7 +46,8 @@
                   @add-row="handleAddRow"
                   @add-column="handleAddColumn"
                   @delete-node="handleDeleteNode"
-                  @select-widget="handleSelectWidget" />
+                  @select-widget="handleSelectWidget"
+                  @move-row="handleMoveRow" />
             </div>
 
               <!-- 初始化后添加行布局按钮 -->
@@ -329,9 +330,10 @@ import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
 import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 import LayoutUtils from '@/utils/layout-utils';
+import Vue from 'vue';
 
 // 布局节点组件
-const LayoutNode = {
+const LayoutNode = Vue.component('layout-node', {
   name: 'LayoutNode',
   props: {
     node: {
@@ -363,6 +365,9 @@ const LayoutNode = {
     shouldShowContent() {
       // 如果是叶子节点或者有组件，始终显示内容
       return this.isLeafNode || this.node.widget;
+    },
+    isRow() {
+      return this.node.type === 'row';
     }
   },
   created() {
@@ -387,6 +392,12 @@ const LayoutNode = {
     },
     selectWidget() {
       this.$emit('select-widget', this.node.id);
+    },
+    moveRowUp() {
+      this.$emit('move-row', { id: this.node.id, direction: 'up' });
+    },
+    moveRowDown() {
+      this.$emit('move-row', { id: this.node.id, direction: 'down' });
     },
     showLayoutInfo() {
       const { type, span, height, percentWidth } = this.node;
@@ -496,7 +507,8 @@ const LayoutNode = {
               'add-row': parentId => this.$emit('add-row', parentId),
               'add-column': parentId => this.$emit('add-column', parentId),
               'delete-node': nodeId => this.$emit('delete-node', nodeId),
-              'select-widget': nodeId => this.$emit('select-widget', nodeId)
+              'select-widget': nodeId => this.$emit('select-widget', nodeId),
+              'move-row': data => this.$emit('move-row', data)
             }
           })
         )
@@ -535,6 +547,26 @@ const LayoutNode = {
           h('span', {}, '添加组件')
         ]);
       }
+    };
+
+    // 创建节点标题
+    const renderNodeTitle = () => {
+      let title = '';
+      
+      if (this.node.type === 'row') {
+        title = '行布局';
+      } else if (this.node.type === 'column') {
+        title = '列布局';
+      }
+      
+      if (this.node.widget) {
+        title += ` - ${this.node.widget.name}`;
+      }
+      
+      return h('div', { class: 'node-title' }, [
+        h('span', {}, title),
+        this.node.height ? h('span', { class: 'node-height' }, `高度: ${this.node.height}`) : null
+      ]);
     };
 
     // 创建节点样式对象
@@ -596,13 +628,7 @@ const LayoutNode = {
       }
     }, [
       h('div', { class: 'node-header' }, [
-        h('div', { class: 'node-title' }, [
-          h('i', { 
-            class: this.node.type === 'row' 
-              ? 'el-icon-s-unfold' 
-              : 'el-icon-s-grid'
-          })
-        ]),
+        renderNodeTitle(),
         h('div', { class: 'node-controls' }, [
           // 对于行布局，添加行高输入框和列配置
           this.node.type === 'row' ? h('div', { class: 'row-settings' }, [
@@ -701,18 +727,59 @@ const LayoutNode = {
             ])
           ]) : null,
           
-          // 不是根节点时显示删除按钮
-          !this.isRoot ? h('el-button', {
-            props: { 
-              type: 'text',
-              size: 'mini',
-              icon: 'el-icon-delete'
-            },
-            style: {
-              color: '#F56C6C'
-            },
-            on: { click: this.deleteNode }
-          }) : null
+          // 操作按钮组
+          h('div', { class: 'action-buttons' }, [
+            // 行布局的上移按钮
+            this.node.type === 'row' ? h('el-button', {
+              props: { 
+                type: 'text',
+                size: 'mini',
+                icon: 'el-icon-arrow-up'
+              },
+              style: {
+                color: '#409EFF',
+                marginRight: '5px'
+              },
+              on: { 
+                click: (e) => {
+                  e.stopPropagation();
+                  this.moveRowUp();
+                } 
+              }
+            }) : null,
+            
+            // 行布局的下移按钮
+            this.node.type === 'row' ? h('el-button', {
+              props: { 
+                type: 'text',
+                size: 'mini',
+                icon: 'el-icon-arrow-down'
+              },
+              style: {
+                color: '#409EFF',
+                marginRight: '5px'
+              },
+              on: { 
+                click: (e) => {
+                  e.stopPropagation();
+                  this.moveRowDown();
+                } 
+              }
+            }) : null,
+            
+            // 不是根节点时显示删除按钮
+            !this.isRoot ? h('el-button', {
+              props: { 
+                type: 'text',
+                size: 'mini',
+                icon: 'el-icon-delete'
+              },
+              style: {
+                color: '#F56C6C'
+              },
+              on: { click: this.deleteNode }
+            }) : null
+          ])
         ])
       ]),
       h('div', { 
@@ -728,7 +795,7 @@ const LayoutNode = {
       ])
     ]);
   }
-};
+});
 
 export default {
   name: 'LayoutEditor',
@@ -914,6 +981,72 @@ export default {
       this.selectedWidgetId = null;
       this.selectedChannelId = null;
       this.widgetDialogVisible = true;
+    },
+    
+    // 处理行移动
+    handleMoveRow(data) {
+      const { id, direction } = data;
+      
+      // 找到行节点及其父节点
+      const findNodeWithParent = (nodeId, tree, parent = null) => {
+        if (!tree) return { node: null, parent: null };
+        
+        if (tree.id === nodeId) {
+          return { node: tree, parent };
+        }
+        
+        if (tree.children && tree.children.length > 0) {
+          for (const child of tree.children) {
+            const result = findNodeWithParent(child.id, child, tree);
+            if (result.node) {
+              return result;
+            }
+          }
+        }
+        
+        return { node: null, parent: null };
+      };
+      
+      const { node, parent } = findNodeWithParent(id, this.rootNode);
+      
+      if (!node || !parent || node.type !== 'row') {
+        this.$message.warning('无法移动：找不到行节点或父节点');
+        return;
+      }
+      
+      // 找到节点在父节点children中的索引
+      const index = parent.children.findIndex(child => child.id === id);
+      if (index === -1) {
+        this.$message.warning('无法移动：节点不在父节点的子节点列表中');
+        return;
+      }
+      
+      // 计算目标索引
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      // 检查边界
+      if (targetIndex < 0 || targetIndex >= parent.children.length) {
+        this.$message.warning(`已经在${direction === 'up' ? '最顶部' : '最底部'}，无法继续${direction === 'up' ? '上移' : '下移'}`);
+        return;
+      }
+      
+      // 交换位置
+      const temp = parent.children[index];
+      parent.children[index] = parent.children[targetIndex];
+      parent.children[targetIndex] = temp;
+      
+      // 创建新的根节点引用来触发完整更新
+      const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
+      
+      // 更新本地状态
+      this.rootNode = null; // 先设为null强制刷新
+      this.$nextTick(() => {
+        this.rootNode = newRootNode;
+        
+        // 保存修改后的布局
+        this.saveLayoutTree(this.rootNode);
+        this.$message.success(`行已${direction === 'up' ? '上移' : '下移'}`);
+      });
     },
     
     // 关闭组件选择对话框
@@ -2074,6 +2207,19 @@ export default {
         margin-right: 8px;
         font-size: 16px;
       }
+      
+      .node-height {
+        margin-left: 10px;
+        font-size: 12px;
+        color: #909399;
+        font-style: italic;
+      }
+      
+      .move-buttons {
+        margin-left: 15px;
+        display: flex;
+        align-items: center;
+      }
     }
     
     .node-controls {
@@ -2115,6 +2261,12 @@ export default {
             min-width: 150px;
           }
         }
+      }
+      
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
       }
     }
   }
