@@ -3,7 +3,9 @@
     title="选择栏目样式"
     :visible.sync="visible"
     width="80%"
-    :before-close="handleClose">
+    :before-close="handleClose"
+    class="widget-selector-dialog"
+    :close-on-click-modal="false">
     <div class="widget-selection">
       <el-tabs v-model="activeWidgetCategory" type="card">
         <el-tab-pane 
@@ -41,7 +43,7 @@
                   </div>
                 </el-card>
                 <div class="widget-description">
-                  <p>{{ widget.description }}</p>
+                  <p>{{ widget.description || '暂无描述' }}</p>
                 </div>
               </div>
             </el-col>
@@ -50,17 +52,6 @@
       </el-tabs>
     </div>
     <div slot="footer" class="dialog-footer">
-      <div class="channel-selection" v-if="selectedWidgetId">
-        <span>关联栏目：</span>
-        <el-select v-model="selectedChannelId" placeholder="请选择栏目">
-          <el-option
-            v-for="channel in channels"
-            :key="channel.id"
-            :label="channel.name"
-            :value="channel.id">
-          </el-option>
-        </el-select>
-      </div>
       <el-button @click="handleClose">取消</el-button>
       <el-button type="primary" @click="confirmSelection" :disabled="!selectedWidgetId">确定</el-button>
     </div>
@@ -86,8 +77,7 @@ export default {
   data() {
     return {
       activeWidgetCategory: '轮播图',
-      selectedWidgetId: null,
-      selectedChannelId: null
+      selectedWidgetId: null
     }
   },
   computed: {
@@ -121,6 +111,7 @@ export default {
     
     // 显示组件设置
     showWidgetSettings(widget) {
+    console.log('showWidgetSettings', widget);
       this.$root.$emit('widget-config-requested', widget);
     },
     
@@ -143,10 +134,13 @@ export default {
         return;
       }
       
+      const node = this.findNode();
+      const channelId = node && node.channelId ? node.channelId : null;
+      
       this.$emit('confirm', {
         nodeId: this.nodeId,
         widgetId: this.selectedWidgetId,
-        channelId: this.selectedChannelId,
+        channelId,
         widget
       });
       
@@ -157,7 +151,35 @@ export default {
     // 重置状态
     reset() {
       this.selectedWidgetId = null;
-      this.selectedChannelId = null;
+    },
+    
+    // 查找当前节点
+    findNode() {
+      if (!this.nodeId) return null;
+      
+      try {
+        // 尝试从Vuex中获取布局树
+        const layoutTree = this.$store.state.layout.layoutTree;
+        
+        const findNodeById = (node, id) => {
+          if (!node) return null;
+          if (node.id === id) return node;
+          
+          if (node.children) {
+            for (const child of node.children) {
+              const found = findNodeById(child, id);
+              if (found) return found;
+            }
+          }
+          
+          return null;
+        };
+        
+        return findNodeById(layoutTree, this.nodeId);
+      } catch (e) {
+        console.error('找不到节点:', e);
+        return null;
+      }
     }
   },
   watch: {
@@ -165,20 +187,51 @@ export default {
       if (val) {
         // 默认选中第一个分类
         this.activeWidgetCategory = this.widgetCategories[0] || '轮播图';
+        
+        // 当打开对话框时，如果节点已有关联的组件，自动选中
+        const node = this.findNode();
+        if (node && node.widget) {
+          this.selectedWidgetId = node.widget.id;
+        }
       } else {
         this.reset();
       }
     }
   },
-  created() {
-    console.log('WidgetSelector created');
-  }
 };
 </script>
 
 <style lang="scss" scoped>
+// 对话框样式
+.widget-selector-dialog {
+  ::v-deep .el-dialog {
+    display: flex;
+    flex-direction: column;
+    margin-top: 5vh !important;
+    max-height: 90vh;
+    
+    .el-dialog__body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+    
+    .el-dialog__header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #EBEEF5;
+    }
+    
+    .el-dialog__footer {
+      padding: 15px 20px;
+      border-top: 1px solid #EBEEF5;
+      text-align: center;
+    }
+  }
+}
+
 // 组件选择对话框样式
 .widget-selection {
+  min-height: 400px;
   max-height: 60vh;
   overflow-y: auto;
   
@@ -218,7 +271,7 @@ export default {
       }
       
       .preview-area {
-        height: 160px;
+        height: 180px;
         overflow: hidden;
         background-color: #f5f7fa;
         border-radius: 4px;
@@ -227,7 +280,7 @@ export default {
         
         .preview-component {
           transform: scale(0.8);
-          transform-origin: top left;
+          transform-origin: top center;
         }
       }
     }
@@ -246,13 +299,16 @@ export default {
 
 .dialog-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  .channel-selection {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  justify-content: center;
+  gap: 10px;
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .widget-selection {
+    .el-col {
+      width: 100% !important;
+    }
   }
 }
 </style> 
