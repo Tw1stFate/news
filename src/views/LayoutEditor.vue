@@ -90,13 +90,11 @@ import WidgetSelector from '@/views/WidgetSelector.vue';
 import PreviewDialog from '@/views/components/PreviewDialog.vue';
 import ImportDialog from '@/views/components/ImportDialog.vue';
 import QuickLayoutForm from '@/views/components/QuickLayoutForm.vue';
-import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 
 export default {
   name: 'LayoutEditor',
   components: {
     LayoutNode,
-    LayoutPreview,
     WidgetSelector,
     PreviewDialog,
     ImportDialog,
