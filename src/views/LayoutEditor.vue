@@ -50,63 +50,12 @@
                   @move-row="handleMoveRow" />
             </div>
 
-              <!-- 初始化后添加行布局按钮 -->
+              <!-- 快速添加行布局 -->
               <div class="add-layout-controls">
-                <div class="quick-layout-form">
-                  <div class="form-row">
-                    <div class="form-group">
-                      <div class="label-wrapper">
-                        <label>行数:</label>
-                      </div>
-                      <div class="input-wrapper">
-                        <el-input-number v-model="quickRowConfig.rows" :min="1" :max="5" size="small"></el-input-number>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <div class="label-wrapper">
-                        <el-tooltip content="留空表示高度自适应内容，直接输入数值如200即可，单位默认为px" placement="top">
-                          <i class="el-icon-question"></i>
-                        </el-tooltip>
-                        <label>行高:</label>
-                      </div>
-                      <div class="input-wrapper">
-                        <el-input v-model="quickRowConfig.height" size="small" style="width: 100%;" placeholder="默认自适应, 可输入自定义高度">
-                          <template slot="suffix">px</template>
-                        </el-input>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <div class="label-wrapper">
-                        <label>列配置:</label>
-                      </div>
-                      <div class="input-wrapper">
-                        <el-select v-model="quickRowConfig.columnPreset" size="small" style="width: 100%;" @change="handlePresetChange">
-                          <el-option label="不分列" value="none"></el-option>
-                          <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
-                          <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
-                          <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
-                          <el-option label="两列 (1:2)" value="1:2"></el-option>
-                          <el-option label="自定义" value="custom"></el-option>
-                        </el-select>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="form-group" v-if="quickRowConfig.columnPreset === 'custom'" style="margin-top: 10px;">
-                    <div class="label-wrapper">
-                      <label>自定义:</label>
-                    </div>
-                    <div class="input-wrapper">
-                      <el-input v-model="quickRowConfig.customRatio" size="small" placeholder="例如: 1:2:1" @change="handlePresetChange"></el-input>
-                      <div class="form-tip">使用冒号分隔不同列的宽度比例</div>
-                    </div>
-                  </div>
-                  
-                  <div class="form-actions">
-                    <el-button size="small" @click="clearQuickConfig">重置</el-button>
-                    <el-button type="primary" size="small" @click="quickAddRows">添加行</el-button>
-                  </div>
-                </div>
+                <quick-layout-form
+                  :default-config="quickRowConfig"
+                  @add-rows="quickAddRows"
+                  @update:config="updateQuickConfig" />
               </div>
             </div>
           </div>
@@ -114,188 +63,29 @@
       </div>
                       </div>
 
-    <!-- 使用新的组件选择器 -->
+    <!-- 使用抽离的组件 -->
     <widget-selector
       :visible.sync="widgetDialogVisible"
       :nodeId="selectedNodeId"
       @confirm="handleWidgetConfirm"
-      @close="handleCloseWidgetDialog"
-    />
-
-    <!-- 组件设置对话框 -->
-    <!-- 每个组件将负责实现自己的配置对话框 -->
-    <!-- 
-      配置变更说明：
-      1. 移除了全局的WidgetConfigDialog组件
-      2. 每个组件单独实现自己的配置对话框
-      3. 通过事件总线触发配置请求和更新
-      4. 事件流程：
-        - 点击组件设置按钮 -> 触发 widget-config-requested 事件
-        - 组件监听此事件并打开自己的配置对话框
-        - 保存配置时触发 widget-config-updated 事件
-        - LayoutEditor监听widget-config-updated事件并通过handleWidgetConfigUpdate方法更新组件配置
-    -->
+      @close="handleCloseWidgetDialog" />
 
     <!-- 布局属性设置对话框 -->
-    <el-dialog
-      :title="newLayoutType === 'row' ? '添加行布局' : '添加列布局'"
+    <layout-props-dialog
       :visible.sync="layoutPropsDialogVisible"
-      width="30%">
-      <el-form :model="newLayoutProps" label-width="100px">
-        <el-form-item label="布局比例" prop="ratios">
-          <el-input v-model="newLayoutProps.ratios" :placeholder="newLayoutType === 'row' ? '可选，例如: 1:1 或 1:2:1' : '例如: 1:1 或 2:3:1'">
-            <template slot="append">
-              <el-tooltip :content="newLayoutType === 'row' ? '用冒号分隔各行的高度比例，如1:1表示两个等高行，1:2:1表示三行(25%,50%,25%)' : '用冒号分隔各列的宽度比例，如1:1表示两个等宽列，2:5:3表示三列(20%,50%,30%)'" placement="top">
-                <i class="el-icon-question"></i>
-              </el-tooltip>
-            </template>
-          </el-input>
-          <div class="form-item-tip">
-            <span v-if="newLayoutType === 'row'">留空表示添加单个行，输入比例如1:1将创建多个行</span>
-            <span v-else>输入比例如1:1将创建两个等宽列，1:2表示宽度比为1:2的两列</span>
-        </div>
-        </el-form-item>
-        <el-form-item label="高度" prop="height">
-          <el-input v-model="newLayoutProps.height" placeholder="可选，如200px">
-            <template slot="append">px</template>
-          </el-input>
-          <div class="form-item-tip">
-            <span v-if="newLayoutType === 'row'">留空表示高度自适应内容</span>
-            <span v-else>留空表示高度占满父容器</span>
-          </div>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="layoutPropsDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmAddLayout">确认</el-button>
-      </span>
-    </el-dialog>
+      :layout-type="newLayoutType"
+      :parent-id="newLayoutParentId"
+      @confirm="confirmAddLayout" />
 
     <!-- 布局预览对话框 -->
-    <el-dialog
-      title="布局预览效果"
+    <preview-dialog
       :visible.sync="previewDialogVisible"
-      width="90%"
-      class="preview-dialog"
-      :fullscreen="true"
-      :before-close="hidePreview">
-      <div class="preview-toolbar">
-        <div class="preview-info">
-          <i class="el-icon-info"></i>
-          <span>此预览展示了布局的最终效果，包括所有添加的组件和栏目内容</span>
-        </div>
-        <el-button type="primary" size="small" @click="hidePreview">返回编辑</el-button>
-      </div>
-      <layout-preview :layout-tree="previewLayoutTree" />
-    </el-dialog>
+      :layout-tree="previewLayoutTree" />
 
     <!-- 导入布局对话框 -->
-    <el-dialog
-      title="导入布局配置"
+    <import-dialog
       :visible.sync="importDialogVisible"
-      :width="dialogWidth"
-      :close-on-click-modal="false"
-      :close-on-press-escape="!importing"
-      @closed="handleImportDialogClosed"
-      custom-class="import-layout-dialog">
-      <div class="import-dialog-content">
-        <el-upload
-          class="layout-uploader"
-          drag
-          action="#"
-          :auto-upload="false"
-          :on-change="handleFileChange"
-          :limit="1"
-          :file-list="importFileList"
-          :disabled="importing"
-          ref="importUpload">
-          <i class="el-icon-upload"></i>
-          <div class="el-upload__text">将布局配置文件拖到此处，或<em>点击上传</em></div>
-          <div slot="tip" class="el-upload__tip">只能上传JSON文件，且布局结构必须符合要求</div>
-        </el-upload>
-        <div class="import-tips" v-if="importFile">
-          <el-alert
-            title="导入操作将覆盖当前布局"
-            type="warning"
-            :closable="false"
-            show-icon>
-            <p>请确保已备份当前布局，导入操作不可撤销。</p>
-          </el-alert>
-        </div>
-      </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="cancelImport" :disabled="importing">取消</el-button>
-        <el-button type="primary" @click="importLayout" :disabled="!importFile || importing" :loading="importing">
-          导入
-        </el-button>
-      </span>
-    </el-dialog>
-    
-    <!-- 快速创建布局对话框 -->
-    <el-dialog
-      title="快速创建布局"
-      :visible.sync="quickLayoutDialogVisible"
-      width="40%">
-      <el-form :model="quickLayoutConfig" label-width="100px">
-        <el-form-item label="行数" prop="rows">
-          <el-input-number v-model="quickLayoutConfig.rows" :min="1" :max="10" size="small"></el-input-number>
-          <div class="form-item-tip">选择要创建的行数 (1-10)</div>
-        </el-form-item>
-        
-        <el-form-item label="每行列配置">
-          <div v-for="(row, index) in quickLayoutConfig.rowConfigs" :key="index" class="row-config">
-            <div class="row-header">
-              <span class="row-label">第 {{ index + 1 }} 行</span>
-              <el-select v-model="row.columnType" size="small" style="width: 120px;" @change="updateRowConfig(index)">
-                <el-option label="无列" value="none"></el-option>
-                <el-option label="等宽列" value="equal"></el-option>
-                <el-option label="自定义比例" value="custom"></el-option>
-              </el-select>
-            </div>
-            
-            <div class="column-config" v-if="row.columnType !== 'none'">
-              <template v-if="row.columnType === 'equal'">
-                <el-input-number 
-                  v-model="row.columns" 
-                  :min="1" 
-                  :max="6" 
-                  size="small" 
-                  @change="updateRowConfig(index)">
-                </el-input-number>
-                <span class="config-label">个等宽列</span>
-              </template>
-              
-              <template v-else-if="row.columnType === 'custom'">
-                <el-input 
-                  v-model="row.ratio" 
-                  placeholder="例如: 1:2:1" 
-                  size="small" 
-                  style="width: 200px;"
-                  @change="updateRowConfig(index)">
-                </el-input>
-                <div class="form-item-tip">使用冒号分隔各列宽度比例</div>
-              </template>
-            </div>
-            
-            <div class="row-preview" v-if="row.columnType !== 'none'">
-              <div class="preview-row">
-                <div 
-                  v-for="(width, colIndex) in row.columnWidths" 
-                  :key="colIndex"
-                  class="preview-col"
-                  :style="{ width: width + '%' }">
-                  {{ width }}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="quickLayoutDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="createQuickLayout">创建布局</el-button>
-      </span>
-    </el-dialog>
+      @import="importLayout" />
   </div>
 </template>
 
@@ -304,545 +94,25 @@ import { mapState, mapActions } from 'vuex';
 import WidgetRegistry from '@/services/widget-registry';
 import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
-import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 import LayoutUtils from '@/utils/layout-utils';
-import Vue from 'vue';
+import LayoutNode from '@/views/components/LayoutNode.vue';
 import WidgetSelector from '@/views/WidgetSelector.vue';
-
-// 布局节点组件
-const LayoutNode = Vue.component('layout-node', {
-  name: 'LayoutNode',
-  props: {
-    node: {
-      type: Object,
-      required: true
-    },
-    isRoot: {
-      type: Boolean,
-      default: false
-    },
-    depth: {
-      type: Number,
-      default: 0
-    }
-  },
-  data() {
-    return {
-      isHovered: false,
-      // 如果是叶子节点，强制显示
-      forceVisible: !this.node.children || this.node.children.length === 0,
-      // 添加列配置下拉选项
-      columnPreset: 'none'
-    };
-  },
-  computed: {
-    isLeafNode() {
-      return !this.node.children || this.node.children.length === 0;
-    },
-    shouldShowContent() {
-      // 如果是叶子节点或者有组件，始终显示内容
-      return this.isLeafNode || this.node.widget;
-    },
-    isRow() {
-      return this.node.type === 'row';
-    }
-  },
-  created() {
-    // 初始化列配置值
-    this.initColumnPreset();
-  },
-  methods: {
-    handleMouseEnter() {
-      this.isHovered = true;
-    },
-    handleMouseLeave() {
-      this.isHovered = false;
-    },
-    addRow() {
-      this.$emit('add-row', this.node.id);
-    },
-    addColumn() {
-      this.$emit('add-column', this.node.id);
-    },
-    deleteNode() {
-      this.$emit('delete-node', this.node.id);
-    },
-    selectWidget() {
-      this.$emit('select-widget', this.node.id);
-    },
-    showWidgetSettings() {
-      // 向父组件发送显示组件设置请求
-      if (this.node.widget) {
-        // 尝试获取组件实例
-        const widgetComponent = this.$refs.widgetComponent;
-        
-        // 如果组件实例存在并且有showSettingDialog方法，直接调用
-        if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
-          widgetComponent.showSettingDialog();
-        }
-      }
-    },
-    moveRowUp() {
-      this.$emit('move-row', { id: this.node.id, direction: 'up' });
-    },
-    moveRowDown() {
-      this.$emit('move-row', { id: this.node.id, direction: 'down' });
-    },
-    showLayoutInfo() {
-      const { type, span, height, percentWidth } = this.node;
-      let message = '';
-      
-      if (type === 'row') {
-        message = `行布局: 宽度占满(100%)${height ? `，高度: ${height}` : '，高度自适应'}`;
-      } else if (type === 'column') {
-        const widthText = percentWidth || `${Math.round((span || 1) * 10)}%`;
-        message = `列布局: 宽度 ${widthText}${height ? `，高度: ${height}` : '，高度占满'}`;
-      }
-      
-      this.$root.$message.info(message);
-    },
-    // 获取组件实例
-    getWidgetComponent(type) {
-      return WidgetRegistry.get(type);
-    },
-    // 初始化列配置值
-    initColumnPreset() {
-      if (this.node.type !== 'row' || !this.node.children || this.node.children.length === 0) {
-        this.columnPreset = 'none';
-        return;
-      }
-      
-      // 检查子节点是否都是列
-      const columnChildren = this.node.children.filter(child => child.type === 'column');
-      if (columnChildren.length !== this.node.children.length) {
-        this.columnPreset = 'none';
-        return;
-      }
-      
-      // 根据列数和比例判断预设类型
-      const count = columnChildren.length;
-      
-      // 检查是否为等宽列
-      const isEqualWidth = columnChildren.every(col => {
-        return col.percentWidth === columnChildren[0].percentWidth;
-      });
-      
-      if (count === 2 && isEqualWidth) {
-        this.columnPreset = '1:1';
-      } else if (count === 3 && isEqualWidth) {
-        this.columnPreset = '1:1:1';
-      } else if (count === 3) {
-        // 检查是否为1:2:1比例
-        const widths = columnChildren.map(col => parseFloat(col.percentWidth));
-        if (Math.abs(widths[0] - widths[2]) < 1 && Math.abs(widths[1] - (widths[0] * 2)) < 2) {
-          this.columnPreset = '1:2:1';
-        } else {
-          this.columnPreset = 'custom';
-        }
-      } else if (count === 2) {
-        // 检查是否为1:2比例
-        const widths = columnChildren.map(col => parseFloat(col.percentWidth));
-        if (Math.abs(widths[1] - (widths[0] * 2)) < 2) {
-          this.columnPreset = '1:2';
-        } else {
-          this.columnPreset = 'custom';
-        }
-      } else {
-        this.columnPreset = 'custom';
-      }
-    }
-  },
-  render(h) {
-    // 创建子节点
-    const renderChildren = () => {
-      if (!this.node.children || this.node.children.length === 0) {
-        return h('div', { class: 'empty-container' }, [
-          h('span', {}, this.node.type === 'row' ? '可添加行或列布局' : '可添加行布局')
-        ]);
-      }
-      
-      // 确定子节点类型
-      const hasColumnChildren = this.node.children.some(child => child.type === 'column');
-      
-      // 布局容器类
-      const containerClass = hasColumnChildren && this.node.type === 'row' 
-        ? 'column-container' // 如果行布局中有列节点，使用列容器样式
-        : (this.node.type === 'row' ? 'row-container' : 'column-container');
-        
-      return h('div', { 
-        class: containerClass,
-        style: {
-          display: 'flex', 
-          // 如果是行布局中的列子节点，强制横向排列
-          flexDirection: (this.node.type === 'row' && hasColumnChildren) ? 'row' : (this.node.type === 'row' ? 'column' : 'row'),
-          flexWrap: 'nowrap',
-          width: '100%',
-          gap: '0px',
-          overflow: 'hidden' // 防止溢出
-        }
-      }, 
-        this.node.children.map(child => 
-          h('layout-node', {
-            props: {
-              node: child,
-              depth: this.depth + 12
-            },
-            style: child.type === 'column' ? {
-              flex: child.percentWidth ? `0 0 ${child.percentWidth}` : `${child.span} 0 0`,
-              width: child.percentWidth || `${child.span * 10}%`,
-              minWidth: child.percentWidth || `${child.span * 10}%`
-            } : {},
-            on: {
-              'add-row': parentId => this.$emit('add-row', parentId),
-              'add-column': parentId => this.$emit('add-column', parentId),
-              'delete-node': nodeId => this.$emit('delete-node', nodeId),
-              'select-widget': nodeId => this.$emit('select-widget', nodeId),
-              'move-row': data => this.$emit('move-row', data)
-            }
-          })
-        )
-      );
-    };
-
-    // 叶子节点的内容
-    const renderLeafContent = () => {
-      console.log('渲染叶子节点:', this.node.id, '有组件?', !!this.node.widget);
-      
-      if (this.node.widget) {
-        return h('div', { class: 'node-widget' }, [
-          h('div', { class: 'widget-preview' }, [
-            // 渲染实际组件
-            h(this.getWidgetComponent(this.node.widget.type), {
-              props: {
-                config: this.node.widget.config || {},
-                channelId: this.node.channelId,
-                widgetId: this.node.widget.id
-              },
-              ref: 'widgetComponent',
-              class: 'preview-component'
-            }),
-            // 悬停时显示的遮罩层
-            h('div', { class: 'widget-overlay' }, [
-              h('div', { class: 'widget-name' }, this.node.widget.name),
-              h('div', { class: 'widget-actions' }, [
-                // 组件设置按钮
-                h('el-button', {
-                  props: { 
-                    type: 'primary',
-                    size: 'small',
-                    icon: 'el-icon-setting'
-                  },
-                  on: { 
-                    click: (e) => {
-                      e.stopPropagation();
-                      // 直接调用组件的方法
-                      const widgetComponent = this.$refs.widgetComponent;
-                      if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
-                        widgetComponent.showSettingDialog();
-                      }
-                    } 
-                  }
-                }, '设置'),
-                
-                // 重新选择样式按钮
-                h('el-button', {
-                  props: { 
-                    type: 'success',
-                    size: 'small',
-                    icon: 'el-icon-refresh'
-                  },
-                  on: { 
-                    click: (e) => {
-                      e.stopPropagation();
-                      this.selectWidget();
-                    } 
-                  }
-                }, '选择样式')
-              ])
-            ])
-          ])
-        ]);
-      } else {
-        return h('div', { 
-          class: 'empty-node',
-          on: {
-            click: this.selectWidget
-          }
-        }, [
-          h('i', { class: 'el-icon-plus' }),
-          h('span', {}, '添加组件')
-        ]);
-      }
-    };
-
-    // 创建节点标题
-    const renderNodeTitle = () => {
-      let title = '';
-      let icon = null;
-      
-      if (this.node.type === 'row') {
-        title = '行布局';
-        icon = 'el-icon-menu'; // 横向图标表示行
-      } else if (this.node.type === 'column') {
-        title = '列布局';
-        icon = 'el-icon-s-grid'; // 网格图标表示列
-      }
-      
-      if (this.node.widget) {
-        title += ` - ${this.node.widget.name}`;
-      }
-      
-      return h('div', { class: 'node-title' }, [
-        icon ? h('i', { class: icon, style: { marginRight: '5px', fontSize: '16px' } }) : null,
-        h('span', {}, title),
-        this.node.height ? h('span', { class: 'node-height' }, `高度: ${this.node.height}`) : null
-      ]);
-    };
-
-    // 创建节点样式对象
-    const nodeStyle = {};
-    
-    // 设置高度
-    if (this.node.height) {
-      nodeStyle.height = this.node.height.match(/^\d+$/) 
-        ? `${this.node.height}px` 
-        : this.node.height;
-    }
-    
-    // 设置宽度
-    if (this.node.width) {
-      nodeStyle.width = this.node.width;
-    }
-    
-    // 列节点宽度样式
-    if (this.node.type === 'column') {
-      if (this.node.percentWidth) {
-        // 使用精确的百分比宽度
-        nodeStyle.width = this.node.percentWidth;
-        nodeStyle.flex = `0 0 ${this.node.percentWidth}`;
-      } else if (this.node.span) {
-        // 向后兼容，为老数据使用span
-        nodeStyle.flex = `${this.node.span} 0 0%`;
-        nodeStyle.width = `${this.node.span * 10}%`;
-      }
-      // 防止列被挤压
-      nodeStyle.flexShrink = "0";
-    }
-
-    // 行节点高度比例（如果设置了flexRatio）
-    if (this.node.type === 'row' && this.node.flexRatio) {
-      nodeStyle.flex = `${this.node.flexRatio} 0 auto`;
-    }
-
-    // 创建布局节点
-    return h('div', { 
-      class: [
-        'layout-node', 
-        `node-${this.node.type}`, 
-        `depth-${this.depth}`, 
-        { 
-          'is-hovered': this.isHovered,
-          'is-leaf': this.isLeafNode,
-          'has-widget': !!this.node.widget
-        }
-      ],
-      style: {
-        ...nodeStyle,
-        // 添加一些额外的样式确保显示
-        position: 'relative',
-        display: 'block'
-      },
-      on: {
-        mouseenter: this.handleMouseEnter,
-        mouseleave: this.handleMouseLeave
-      }
-    }, [
-      // 行布局显示完整header，列布局显示精简header
-      h('div', { class: 'node-header' }, [
-        this.node.type === 'row' ? (
-          // 行布局标题
-          renderNodeTitle()
-        ) : (
-          // 列布局标题 - 只显示图标
-          h('div', { class: 'node-title column-title' }, [
-            h('i', { class: 'el-icon-s-grid', style: { marginRight: '5px', fontSize: '16px' } }),
-            h('span', {}, '列布局')
-          ])
-        ),
-        h('div', { class: 'node-controls' }, [
-          // 对于行布局，添加行高输入框和列配置
-          this.node.type === 'row' ? h('div', { class: 'row-settings' }, [
-            // 行高设置
-            h('div', { class: 'setting-item' }, [
-              h('span', { class: 'setting-label' }, '行高:'),
-              h('el-input', {
-                props: {
-                  value: this.node.height || '',
-                  size: 'mini'
-                },
-                attrs: {
-                  placeholder: '自适应'
-                },
-                on: {
-                  input: (val) => {
-                    this.$set(this.node, 'height', val);
-                    // 触发布局更新
-                    this.$root.$emit('layout-updated');
-                  }
-                },
-                style: {
-                  width: '80px'
-                }
-              }, [
-                h('template', { slot: 'suffix' }, 'px')
-              ])
-            ]),
-            // 列配置下拉菜单
-            h('div', { class: 'setting-item' }, [
-              h('span', { class: 'setting-label' }, '列配置:'),
-              h('el-select', {
-                props: {
-                  value: this.columnPreset,
-                  size: 'mini',
-                  placeholder: '选择列配置'
-                },
-                on: {
-                  change: (val) => {
-                    this.columnPreset = val;
-                    if (val === 'none') {
-                      // 不分列 - 清除现有的列节点
-                      const parent = this.node;
-                      // 清空现有子节点
-                      parent.children = [];
-                      // 触发布局更新
-                      this.$root.$emit('layout-updated');
-                      return;
-                    } else if (val === 'custom') {
-                      // 自定义列配置
-                      this.addColumn();
-                    } else {
-                      // 使用预设列配置
-                      // 解析预设比例
-                      const ratios = val.split(':');
-                      const parent = this.node;
-                      
-                      // 清空现有子节点
-                      parent.children = [];
-                      
-                      // 计算总比例
-                      const totalRatio = ratios.reduce((sum, r) => sum + parseInt(r), 0);
-                      
-                      // 创建列节点
-                      ratios.forEach(ratio => {
-                        const percent = (parseInt(ratio) / totalRatio) * 100;
-                        const span = Math.round((parseInt(ratio) / totalRatio) * 10);
-                        
-                        parent.children.push({
-                          id: uuidv4(),
-                          type: 'column',
-                          span,
-                          percentWidth: `${percent.toFixed(2)}%`,
-                          height: '100%',
-                          parent: parent.id,
-                          children: []
-                        });
-                      });
-                      
-                      // 触发布局更新
-                      this.$root.$emit('layout-updated');
-                    }
-                  }
-                },
-                style: {
-                  width: '120px'
-                }
-              }, [
-                h('el-option', { props: { label: '不分列', value: 'none' } }),
-                h('el-option', { props: { label: '等宽两列 (1:1)', value: '1:1' } }),
-                h('el-option', { props: { label: '等宽三列 (1:1:1)', value: '1:1:1' } }),
-                h('el-option', { props: { label: '三列 (1:2:1)', value: '1:2:1' } }),
-                h('el-option', { props: { label: '两列 (1:2)', value: '1:2' } }),
-                h('el-option', { props: { label: '自定义', value: 'custom' } })
-              ])
-            ])
-          ]) : null,
-          
-          // 操作按钮组
-          h('div', { class: 'action-buttons' }, [
-            // 行布局的上移按钮
-            this.node.type === 'row' ? h('el-button', {
-              props: { 
-                type: 'text',
-                size: 'mini',
-                icon: 'el-icon-arrow-up'
-              },
-              style: {
-                color: '#409EFF',
-                marginRight: '5px'
-              },
-              on: { 
-                click: (e) => {
-                  e.stopPropagation();
-                  this.moveRowUp();
-                } 
-              }
-            }) : null,
-            
-            // 行布局的下移按钮
-            this.node.type === 'row' ? h('el-button', {
-              props: { 
-                type: 'text',
-                size: 'mini',
-                icon: 'el-icon-arrow-down'
-              },
-              style: {
-                color: '#409EFF',
-                marginRight: '5px'
-              },
-              on: { 
-                click: (e) => {
-                  e.stopPropagation();
-                  this.moveRowDown();
-                } 
-              }
-            }) : null,
-            
-            // 不是根节点时显示删除按钮
-            !this.isRoot ? h('el-button', {
-              props: { 
-                type: 'text',
-                size: 'mini',
-                icon: 'el-icon-delete'
-              },
-              style: {
-                color: '#F56C6C'
-              },
-              on: { click: this.deleteNode }
-            }) : null
-          ])
-        ])
-      ]),
-      h('div', { 
-        class: 'node-content',
-        style: {
-          // 关键修改：强制组件内容区域始终显示
-          display: 'block !important',
-          visibility: 'visible !important',
-          opacity: 1
-        }
-      }, [
-        this.isLeafNode ? renderLeafContent() : renderChildren()
-      ])
-    ]);
-  }
-});
+import LayoutPropsDialog from '@/views/components/LayoutPropsDialog.vue';
+import PreviewDialog from '@/views/components/PreviewDialog.vue';
+import ImportDialog from '@/views/components/ImportDialog.vue';
+import QuickLayoutForm from '@/views/components/QuickLayoutForm.vue';
+import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 
 export default {
   name: 'LayoutEditor',
   components: {
     LayoutNode,
     LayoutPreview,
-    WidgetSelector
+    WidgetSelector,
+    LayoutPropsDialog,
+    PreviewDialog,
+    ImportDialog,
+    QuickLayoutForm
   },
   data() {
     return {
@@ -860,18 +130,6 @@ export default {
       previewDialogVisible: false,
       previewLayoutTree: null,
       importDialogVisible: false,
-      importFile: null,
-      importFileList: [],
-      importing: false,
-      dialogWidth: '40%',  // 默认对话框宽度
-      quickLayoutDialogVisible: false,
-      quickLayoutConfig: {
-        rows: 2,
-        rowConfigs: [
-          { columnType: 'equal', columns: 2, columnWidths: [50, 50], ratio: '1:1' },
-          { columnType: 'equal', columns: 3, columnWidths: [33.33, 33.33, 33.34], ratio: '1:1:1' }
-        ]
-      },
       quickRowConfig: {
         rows: 1,
         columnPreset: 'none',
@@ -889,6 +147,57 @@ export default {
     widgets() {
       return WidgetRegistry.getDefaultWidgets();
     }
+  },
+  watch: {
+    // 监听vuex中的布局树变化
+    layoutTree: {
+      handler(newVal) {
+        if (newVal && (!this.rootNode || JSON.stringify(newVal) !== JSON.stringify(this.rootNode))) {
+          console.log('检测到vuex中的布局树变化，正在更新...');
+          // 深拷贝以确保不共享引用
+          this.rootNode = JSON.parse(JSON.stringify(newVal));
+          
+          // 检查是否有组件的叶子节点
+          this.markNodesWithComponents(this.rootNode);
+        }
+      },
+      deep: true,
+      immediate: true
+    }
+  },
+  created() {
+    // 加载栏目数据
+    this.fetchChannels();
+    this.fetchCategories();
+    
+    // 尝试从vuex加载已保存的布局
+    this.loadLayoutTree().then(layoutTree => {
+      if (layoutTree) {
+        this.rootNode = layoutTree;
+      }
+    });
+  },
+  mounted() {
+    // 监听布局更新事件
+    this.$root.$on('layout-updated', () => {
+      // 保存布局树
+      this.saveLayoutTree(this.rootNode);
+    });
+    
+    // 监听组件配置更新事件
+    this.$root.$on('widget-config-updated', (widgetId, newConfig) => {
+      // 找到当前选中的组件并更新配置
+      const widget = this.widgets.find(w => w.id === widgetId);
+      if (widget) {
+        widget.config = { ...newConfig };
+      }
+    });
+  },
+  beforeDestroy() {
+    // 移除布局更新事件监听
+    this.$root.$off('layout-updated');
+    // 移除组件配置更新事件监听
+    this.$root.$off('widget-config-updated');
   },
   methods: {
     ...mapActions('channel', ['fetchChannels', 'fetchCategories']),
@@ -918,29 +227,6 @@ export default {
       
       // 保存到vuex
       this.saveLayoutTree(this.rootNode);
-    },
-    
-    // 在根节点下添加行
-    addRootRow() {
-      if (this.rootNode) {
-        if (!this.rootNode.children) {
-          this.rootNode.children = [];
-        }
-        
-        // 直接创建一个新的行布局并添加到根容器下
-        const newRow = {
-          id: uuidv4(),
-          type: 'row',
-          height: '', // 高度自适应
-          width: '100%', // 宽度占满
-          parent: this.rootNode.id,
-          children: []
-        };
-        
-        this.rootNode.children.push(newRow);
-        this.saveLayoutTree(this.rootNode); // 保存修改后的布局
-        this.$message.success('已添加新行布局');
-      }
     },
     
     // 添加行节点到指定父节点
@@ -1135,55 +421,11 @@ export default {
     // 打开导入对话框
     openImportDialog() {
       this.importDialogVisible = true;
-      // 先重置状态，防止之前的状态残留
-      setTimeout(() => {
-        this.resetImportState();
-      }, 100);
-    },
-    
-    // 重置导入状态
-    resetImportState() {
-      // 确保清除所有导入相关状态
-      this.importing = false;
-      this.importFile = null;
-      
-      // 清空文件列表
-      this.importFileList = [];
-      
-      // 手动触发文件上传组件重置
-      this.$nextTick(() => {
-        const uploadRef = this.$refs.importUpload;
-        if (uploadRef && typeof uploadRef.clearFiles === 'function') {
-          uploadRef.clearFiles();
-        }
-      });
-    },
-    
-    // 取消导入
-    cancelImport() {
-      if (this.importing) return;
-      this.importDialogVisible = false;
-    },
-    
-    // 处理导入对话框关闭事件
-    handleImportDialogClosed() {
-      // 确保对话框关闭后重置状态
-      this.resetImportState();
     },
     
     // 导入布局
-    async importLayout() {
-      console.log('执行导入', this.importFile, this.importFileList);
-      
-      if (!this.importFile) {
-        this.$message.warning('请先选择布局配置文件');
-        return;
-      }
-      
+    async importLayout(file) {
       // 设置导入中状态
-      this.importing = true;
-      
-      // 创建加载提示
       const loadingInstance = this.$loading({
         lock: true,
         text: '正在解析布局文件...',
@@ -1193,7 +435,7 @@ export default {
       
       try {
         // 使用工具类导入布局
-        let layoutTree = await LayoutUtils.importLayoutFromFile(this.importFile);
+        let layoutTree = await LayoutUtils.importLayoutFromFile(file);
         
         // 更新加载提示
         loadingInstance.text = '验证布局数据...';
@@ -1211,7 +453,6 @@ export default {
           // 用户取消导入
           console.log('用户取消导入');
           loadingInstance.close();
-          this.importing = false;
           return;
         }
         
@@ -1242,15 +483,11 @@ export default {
                 
                 this.$message.success('布局导入成功');
                 this.importDialogVisible = false;
-                
-                // 导入成功后重置状态
-                this.resetImportState();
               });
             } catch (error) {
               console.error('应用布局错误:', error);
               loadingInstance.close();
               this.$message.error('应用布局失败: ' + error.message);
-              this.importing = false;
             }
           }, 300); // 短暂延迟确保DOM已更新
         });
@@ -1264,9 +501,6 @@ export default {
           duration: 5000,
           showClose: true
         });
-        
-        // 重置状态
-        this.importing = false;
       }
     },
     
@@ -1325,51 +559,17 @@ export default {
       }
     },
     
-    // 处理文件选择变化
-    handleFileChange(file, fileList) {
-      console.log('文件变更:', file, fileList);
-      
-      // 检查文件类型
-      const isJson = file.raw.type === 'application/json' || file.raw.name.endsWith('.json');
-      if (!isJson) {
-        this.$message.error('只能上传JSON格式的文件!');
-        // 清空文件列表
-        this.$refs.importUpload.clearFiles();
-        this.importFile = null;
-        this.importFileList = [];
-        return;
-      }
-      
-      // 更新文件状态
-      this.importFile = file.raw;
-      this.importFileList = [file];
-    },
-
-    // 新增：显示布局属性设置对话框
+    // 显示布局属性设置对话框
     showLayoutPropsDialog(layoutType, parentId) {
       this.layoutPropsDialogVisible = true;
       this.newLayoutType = layoutType;
       this.newLayoutParentId = parentId;
-      
-      // 为不同布局类型设置合适的默认值
-      if (layoutType === 'row') {
-        this.newLayoutProps = {
-          ratios: '', // 行布局默认不设置比例
-          height: ''
-        };
-      } else {
-        this.newLayoutProps = {
-          ratios: '1:1', // 默认等宽两列
-          height: ''
-        };
-      }
     },
     
-    // 新增：确认添加布局
-    confirmAddLayout() {
-      const { ratios, height } = this.newLayoutProps;
-      const layoutType = this.newLayoutType;
-      const parentId = this.newLayoutParentId;
+    // 确认添加布局
+    confirmAddLayout(data) {
+      const { layoutType, parentId, props } = data;
+      const { ratios, height } = props;
       
       if (parentId === null) {
         // 添加到根节点
@@ -1472,17 +672,6 @@ export default {
       }
       
       this.saveLayoutTree(this.rootNode);
-      this.layoutPropsDialogVisible = false;
-    },
-    
-    // 新增：关闭布局属性设置对话框
-    handleCloseLayoutPropsDialog() {
-      this.layoutPropsDialogVisible = false;
-    },
-    
-    // 新增：处理布局类型变化
-    handleLayoutTypeChange() {
-      // 这里可以根据布局类型变化进行相应的处理
     },
 
     // 显示布局预览
@@ -1523,11 +712,6 @@ export default {
       return false;
     },
 
-    // 隐藏布局预览
-    hidePreview() {
-      this.previewDialogVisible = false;
-    },
-
     // 校正列宽度，确保总和为10
     adjustColumnSpans(columns) {
       // 只处理列节点
@@ -1558,221 +742,13 @@ export default {
       }
     },
 
-    // 遍历树并标记有组件的节点
-    markNodesWithComponents(node) {
-      if (!node) return;
-      
-      // 检查当前节点是否有组件
-      if (node.widget) {
-        console.log(`节点 ${node.id} 有组件: ${node.widget.name}`);
-        node.hasWidget = true;
-      }
-      
-      // 递归检查子节点
-      if (node.children && node.children.length > 0) {
-        node.children.forEach(child => this.markNodesWithComponents(child));
-      }
-    },
-
-    // 设置对话框宽度
-    setDialogWidth() {
-      const screenWidth = window.innerWidth;
-      if (screenWidth < 768) {
-        this.dialogWidth = '90%';
-      } else if (screenWidth < 1200) {
-        this.dialogWidth = '60%';
-      } else {
-        this.dialogWidth = '40%';
-      }
-    },
-
-    // 新增：显示快速创建布局对话框
-    showQuickLayoutDialog() {
-      // 初始化快速创建布局配置
-      this.quickLayoutConfig = {
-        rows: 2,
-        rowConfigs: [
-          { columnType: 'equal', columns: 2, columnWidths: [50, 50], ratio: '1:1' },
-          { columnType: 'equal', columns: 3, columnWidths: [33.33, 33.33, 33.34], ratio: '1:1:1' }
-        ]
-      };
-      
-      // 确保所有行配置都有列宽数组
-      this.quickLayoutConfig.rowConfigs.forEach((rowConfig) => {
-        this.updateRowConfig(this.quickLayoutConfig.rowConfigs.indexOf(rowConfig));
-      });
-      
-      this.quickLayoutDialogVisible = true;
-    },
-    
-    // 新增：处理快速创建布局
-    createQuickLayout() {
-      // 验证根节点
-      if (!this.rootNode) {
-        this.createRootNode();
-      }
-      
-      // 清空现有布局
-      this.rootNode.children = [];
-      
-      // 遍历创建布局行
-      this.quickLayoutConfig.rowConfigs.forEach((rowConfig) => {
-        // 创建行布局节点
-        const rowNode = {
-          id: uuidv4(),
-          type: 'row',
-          height: '',
-          width: '100%',
-          parent: this.rootNode.id,
-          children: []
-        };
-        
-        // 如果行需要添加列
-        if (rowConfig.columnType !== 'none') {
-          // 获取列配置
-          let columnRatios;
-          
-          if (rowConfig.columnType === 'equal') {
-            // 等宽列
-            const columnCount = rowConfig.columns || 2;
-            columnRatios = Array(columnCount).fill(1);
-          } else if (rowConfig.columnType === 'custom' && rowConfig.ratio) {
-            // 自定义比例
-            columnRatios = rowConfig.ratio.split(':').map(r => parseInt(r.trim()) || 1);
-          } else {
-            // 默认添加一个全宽列
-            columnRatios = [1];
-          }
-          
-          // 计算总比例
-          const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
-          
-          // 创建列节点
-          columnRatios.forEach((ratio) => {
-            const percent = (ratio / totalRatio) * 100;
-            const span = Math.round((ratio / totalRatio) * 10);
-            
-            rowNode.children.push({
-              id: uuidv4(),
-              type: 'column',
-              span: span,
-              percentWidth: `${percent.toFixed(2)}%`,
-              height: '100%',
-              parent: rowNode.id,
-              children: []
-            });
-          });
-          
-          // 校正span总和为10
-          this.adjustColumnSpans(rowNode.children);
-        }
-        
-        // 添加行到根节点
-        this.rootNode.children.push(rowNode);
-      });
-      
-      // 保存布局并关闭对话框
-      this.saveLayoutTree(this.rootNode);
-      this.quickLayoutDialogVisible = false;
-      
-      // 显示提示
-      this.$message.success('布局创建成功');
-    },
-    
-    // 更新行配置
-    updateRowConfig(index) {
-      const row = this.quickLayoutConfig.rowConfigs[index];
-      
-      // 重置列宽数组
-      row.columnWidths = [];
-      
-      if (row.columnType === 'equal') {
-        // 等宽列
-        const columns = row.columns || 2;
-        const width = 100 / columns;
-        
-        // 生成等宽列数组
-        for (let i = 0; i < columns; i++) {
-          if (i === columns - 1) {
-            // 最后一列处理浮点数误差，确保总和为100%
-            row.columnWidths.push(parseFloat((100 - width * (columns - 1)).toFixed(2)));
-          } else {
-            row.columnWidths.push(parseFloat(width.toFixed(2)));
-          }
-        }
-        
-        // 更新比例字符串
-        row.ratio = Array(columns).fill('1').join(':');
-      } else if (row.columnType === 'custom' && row.ratio) {
-        // 自定义比例
-        const ratios = row.ratio.split(':').map(r => parseInt(r.trim()) || 1);
-        const total = ratios.reduce((sum, r) => sum + r, 0);
-        
-        // 根据比例计算百分比宽度
-        ratios.forEach((r, i) => {
-          if (i === ratios.length - 1) {
-            // 最后一列处理浮点数误差
-            const sum = row.columnWidths.reduce((s, w) => s + w, 0);
-            row.columnWidths.push(parseFloat((100 - sum).toFixed(2)));
-          } else {
-            row.columnWidths.push(parseFloat(((r / total) * 100).toFixed(2)));
-          }
-        });
-      }
-    },
-    
-    // 处理预设列布局选择变化
-    handlePresetChange() {
-      if (this.quickRowConfig.columnPreset === 'custom') {
-        // 使用自定义比例
-        this.calculateColumnWidths(this.quickRowConfig.customRatio);
-      } else if (this.quickRowConfig.columnPreset === 'none') {
-        // 不分列
-        this.quickRowConfig.columnWidths = [];
-      } else {
-        // 使用预设比例
-        this.calculateColumnWidths(this.quickRowConfig.columnPreset);
-      }
-    },
-    
-    // 计算列宽度百分比
-    calculateColumnWidths(ratioString) {
-      if (!ratioString || ratioString === 'none') {
-        this.quickRowConfig.columnWidths = [];
-        return;
-      }
-      
-      // 解析比例
-      const ratios = ratioString.split(':').map(r => parseInt(r.trim()) || 1);
-      const total = ratios.reduce((sum, r) => sum + r, 0);
-      const widths = [];
-      
-      // 计算百分比宽度
-      let sum = 0;
-      for (let i = 0; i < ratios.length - 1; i++) {
-        const width = parseFloat(((ratios[i] / total) * 100).toFixed(2));
-        widths.push(width);
-        sum += width;
-      }
-      
-      // 最后一列计算，避免小数误差
-      widths.push(parseFloat((100 - sum).toFixed(2)));
-      this.quickRowConfig.columnWidths = widths;
-    },
-    
-    // 重置快速配置
-    clearQuickConfig() {
-      this.quickRowConfig = {
-        rows: 1,
-        columnPreset: 'none',
-        customRatio: '1:2:1',
-        height: '',
-        columnWidths: []
-      };
+    // 更新快速配置
+    updateQuickConfig(config) {
+      this.quickRowConfig = config;
     },
     
     // 快速添加行布局
-    quickAddRows() {
+    quickAddRows(config) {
       if (!this.rootNode) {
         this.createRootNode();
       }
@@ -1782,31 +758,31 @@ export default {
       }
       
       // 获取行数
-      const rowCount = this.quickRowConfig.rows || 1;
+      const rowCount = config.rows || 1;
       
       // 创建行
       for (let i = 0; i < rowCount; i++) {
         const rowNode = {
           id: uuidv4(),
           type: 'row',
-          height: this.quickRowConfig.height ? `${this.quickRowConfig.height}px` : '',
+          height: config.height ? `${config.height}px` : '',
           width: '100%',
           parent: this.rootNode.id,
           children: []
         };
         
         // 如果需要添加列
-        if (this.quickRowConfig.columnPreset !== 'none' && this.quickRowConfig.columnWidths.length > 0) {
+        if (config.columnPreset !== 'none' && config.columnWidths.length > 0) {
           // 获取列配置
-          const columnRatios = this.quickRowConfig.columnPreset === 'custom' 
-            ? this.quickRowConfig.customRatio.split(':').map(r => parseInt(r.trim()) || 1)
-            : this.quickRowConfig.columnPreset.split(':').map(r => parseInt(r.trim()) || 1);
+          const columnRatios = config.columnPreset === 'custom' 
+            ? config.customRatio.split(':').map(r => parseInt(r.trim()) || 1)
+            : config.columnPreset.split(':').map(r => parseInt(r.trim()) || 1);
           
           const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
           
           // 创建列
           columnRatios.forEach((ratio, index) => {
-            const percent = this.quickRowConfig.columnWidths[index];
+            const percent = config.columnWidths[index];
             const span = Math.round((ratio / totalRatio) * 10);
             
             rowNode.children.push({
@@ -1833,15 +809,6 @@ export default {
       
       // 显示提示
       this.$message.success(`已添加${rowCount}行布局`);
-    },
-    
-    // 处理组件配置更新
-    handleWidgetConfigUpdate(widgetId, newConfig) {
-      // 找到当前选中的组件并更新配置
-      const widget = this.widgets.find(w => w.id === widgetId);
-      if (widget) {
-        widget.config = { ...newConfig };
-      }
     },
     
     // 处理行移动
@@ -1910,90 +877,22 @@ export default {
       });
     },
     
-    // 显示组件设置对话框
-    showWidgetSettings(widget) {
-      // 每个组件将负责实现自己的配置对话框
-      // 直接调用组件的showSettingDialog方法
-      const componentInstance = this.$refs[`widget_${widget.type}`];
-      if (componentInstance && typeof componentInstance.showSettingDialog === 'function') {
-        componentInstance.showSettingDialog();
+    // 遍历树并标记有组件的节点
+    markNodesWithComponents(node) {
+      if (!node) return;
+      
+      // 检查当前节点是否有组件
+      if (node.widget) {
+        console.log(`节点 ${node.id} 有组件: ${node.widget.name}`);
+        node.hasWidget = true;
+      }
+      
+      // 递归检查子节点
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => this.markNodesWithComponents(child));
       }
     }
   },
-  watch: {
-    // 监听vuex中的布局树变化
-    layoutTree: {
-      handler(newVal) {
-        if (newVal && (!this.rootNode || JSON.stringify(newVal) !== JSON.stringify(this.rootNode))) {
-          console.log('检测到vuex中的布局树变化，正在更新...');
-          // 深拷贝以确保不共享引用
-          this.rootNode = JSON.parse(JSON.stringify(newVal));
-          
-          // 检查是否有组件的叶子节点
-          this.markNodesWithComponents(this.rootNode);
-        }
-      },
-      deep: true,
-      immediate: true
-    },
-    
-    // 监听快速创建布局中行数的变化
-    'quickLayoutConfig.rows': function(newRows, oldRows) {
-      // 行数增加
-      if (newRows > oldRows) {
-        for (let i = oldRows; i < newRows; i++) {
-          // 默认添加等宽两列的配置
-          this.quickLayoutConfig.rowConfigs.push({
-            columnType: 'equal',
-            columns: 2,
-            columnWidths: [50, 50],
-            ratio: '1:1'
-          });
-        }
-      } 
-      // 行数减少
-      else if (newRows < oldRows) {
-        this.quickLayoutConfig.rowConfigs.splice(newRows, oldRows - newRows);
-      }
-    }
-  },
-  created() {
-    // 加载栏目数据
-    this.fetchChannels();
-    this.fetchCategories();
-    
-    // 尝试从vuex加载已保存的布局
-    this.loadLayoutTree().then(layoutTree => {
-      if (layoutTree) {
-        this.rootNode = layoutTree;
-      }
-    });
-  },
-  mounted() {
-    // 根据屏幕宽度设置对话框宽度
-    this.setDialogWidth();
-    // 监听窗口大小变化
-    window.addEventListener('resize', this.setDialogWidth);
-    
-    // 监听布局更新事件
-    this.$root.$on('layout-updated', () => {
-      // 保存布局树
-      this.saveLayoutTree(this.rootNode);
-    });
-    
-    // 监听组件配置更新事件
-    this.$root.$on('widget-config-updated', (widgetId, newConfig) => {
-      this.handleWidgetConfigUpdate(widgetId, newConfig);
-    });
-  },
-  beforeDestroy() {
-    // 移除事件监听
-    window.removeEventListener('resize', this.setDialogWidth);
-    // 移除布局更新事件监听
-    this.$root.$off('layout-updated');
-    // 移除组件配置更新事件监听
-    this.$root.$off('widget-config-updated');
-  }
 };
 </script>
 
@@ -2041,14 +940,6 @@ export default {
         overflow-x: auto;
         max-width: calc(100% - 250px);
         justify-content: flex-end;
-        
-        .el-button {
-          padding: 9px 12px;
-        }
-        
-        .el-button [class^="el-icon-"] + span {
-          margin-left: 5px;
-        }
         
         .action-group {
           flex-shrink: 0;
@@ -2117,739 +1008,16 @@ export default {
         border-radius: 8px;
         border: 1px solid #e6e6e6;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        
-        .form-title {
-          font-size: 16px;
-          margin-top: 0;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
-          border-bottom: 1px dashed #dcdfe6;
-          color: #409EFF;
-        }
       }
     }
-  }
-}
-
-::v-deep .layout-node {
-      position: relative;
-  border: 1px dashed #dcdfe6;
-      border-radius: 8px;
-  margin: 0;
-      transition: all 0.3s;
-  background-color: #fff;
-  box-sizing: border-box; // 确保盒模型计算包含边框和内边距
-  overflow: hidden; // 防止子元素溢出
-  
-  // 确保高度可以生效
-  &[style*="height"] {
-    display: flex;
-    flex-direction: column;
-    
-    .node-content {
-      flex: 1;
-      overflow: auto;
-    }
-  }
-  
-  &.is-hovered {
-    border-color: #409EFF;
-        background-color: #ecf5ff;
-      }
-
-  // 不同深度层级颜色区分
-  &.depth-0 {
-    background-color: #f6f8fc;
-  }
-  
-  &.depth-1 {
-    background-color: #edf2fa;
-  }
-  
-  &.depth-2 {
-    background-color: #e4ecf7;
-  }
-  
-  &.depth-3 {
-    background-color: #dbe6f4;
-  }
-  
-  &.node-row {
-    border-left: 4px solid #67c23a;
-    width: 100%; // 行布局宽度占满
-    background-color: rgba(103, 194, 58, 0.05);
-    
-    &.is-hovered {
-      background-color: rgba(103, 194, 58, 0.1);
-      border-color: #67c23a;
-    }
-    
-    .node-header {
-      background-color: rgba(103, 194, 58, 0.08);
-      
-      .node-title {
-        i {
-          color: #67c23a;
-        }
-      }
-    }
-  }
-  
-  &.node-column {
-    border-left: 4px solid #409eff;
-    height: 100%; // 列布局高度占满
-    background-color: rgba(64, 158, 255, 0.05);
-    border-top: 1px dashed #409eff;
-    border-bottom: 1px dashed #409eff;
-    
-    &.is-hovered {
-      background-color: rgba(64, 158, 255, 0.1);
-      border-color: #409eff;
-    }
-    
-    .node-header {
-      padding: 4px 8px;
-      background-color: rgba(64, 158, 255, 0.1);
-      border-bottom: 1px dashed #c9e0ff;
-      
-      .node-controls {
-        display: flex;
-        justify-content: flex-end;
-        
-        .action-buttons {
-          display: flex;
-          margin-left: 0;
-        }
-      }
-    }
-  }
-  
-  &.node-container {
-    border: none;
-    background-color: transparent;
-  }
-  
-  .node-header {
-        display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    border-bottom: 1px dashed #ebeef5;
-    
-    .node-title {
-      display: flex;
-      align-items: center;
-      
-      i {
-        margin-right: 8px;
-        font-size: 16px;
-      }
-      
-      .node-height {
-        margin-left: 10px;
-        font-size: 12px;
-        color: #909399;
-        font-style: italic;
-      }
-      
-      .move-buttons {
-        margin-left: 15px;
-        display: flex;
-        align-items: center;
-      }
-      
-      &.column-title {
-        font-size: 13px;
-        color: #409EFF;
-        
-        i {
-          color: #409EFF;
-          font-size: 14px;
-        }
-      }
-    }
-    
-    .node-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      
-      .row-settings {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-right: 10px;
-        
-        .setting-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          
-          .setting-label {
-            font-size: 13px;
-            color: #606266;
-            white-space: nowrap;
-          }
-          
-          .el-input {
-            min-width: 120px;
-            
-            ::v-deep .el-input .el-input__suffix {
-              display: flex;
-              align-items: center;
-              height: 100%;
-              right: 5px;
-              color: #909399;
-              font-size: 12px;
-            }
-          }
-
-          .el-select {
-            min-width: 150px;
-          }
-        }
-      }
-      
-      .action-buttons {
-        display: flex;
-        align-items: center;
-        margin-left: auto;
-      }
-    }
-  }
-  
-  .node-content {
-    padding: 8px;
-    min-height: 80px;
-    display: block !important; /* 确保节点内容始终显示 */
-    opacity: 1 !important; /* 强制显示内容 */
-    visibility: visible !important; /* 保证可见性 */
-    
-    
-    .empty-node {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100px;
-      border: 2px dashed #e4e7ed;
-      border-radius: 8px;
-      cursor: pointer;
-    transition: all 0.3s;
-      background-color: #f9f9f9;
-
-      &:hover {
-        background-color: #ecf5ff;
-        border-color: #409EFF;
-        transform: translateY(-2px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-      
-      i {
-        font-size: 28px;
-        margin-bottom: 10px;
-        color: #409EFF;
-      }
-      
-      span {
-        color: #606266;
-        font-weight: 500;
-      }
-    }
-    
-    .node-widget {
-      display: block !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-      padding: 0;
-      margin: 0;
-      background-color: #fff;
-      border-radius: 8px;
-      position: relative;
-      
-      .widget-preview {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        min-height: 100px;
-        background-color: #fff;
-        border-radius: 4px;
-        overflow: hidden;
-        border: 1px solid #ebeef5;
-        position: relative;
-        
-        .preview-component {
-          width: 100%;
-          height: 100%;
-          display: block !important;
-        }
-        
-        .widget-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0, 0, 0, 0.6);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          z-index: 10;
-          
-          .widget-name {
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 15px;
-          }
-          
-          .widget-actions {
-            display: flex;
-            gap: 10px;
-            
-            .el-button {
-              border-radius: 4px;
-            }
-          }
-        }
-        
-        &:hover .widget-overlay {
-          opacity: 1;
-        }
-      }
-    }
-  }
-  
-  // 行容器样式
-  .row-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
-    min-height: 60px;
-    width: 100%; // 确保宽度占满
-    padding: 0; // 移除默认内边距
-    margin: 0; // 确保没有外边距
-    
-    & > .layout-node {
-    margin-bottom: 16px;
-
-    &:last-child {
-      margin-bottom: 0;
-      }
-    }
-  }
-  
-  // 列容器样式 - 行中的列容器
-  .column-container {
-    display: flex !important; // 强制使用flex
-    flex-direction: row !important; // 强制横向排列
-    flex-wrap: nowrap !important; // 禁止换行
-    gap: 0px;
-    width: 100%;
-    min-height: 60px;
-    padding: 0; 
-    margin: 0;
-    align-items: stretch; // 让所有列高度一致
-    
-    & > .layout-node {
-      min-width: 50px; // 减小最小宽度
-      flex-grow: 0 !important; // 禁止自动增长
-      flex-shrink: 0 !important; // 禁止自动缩小
-      margin: 0 !important; // 强制移除所有外边距
-      padding: 0 !important; // 强制移除内边距
-      height: auto !important; // 让高度自适应
-      display: block !important; // 使用块级显示
-      float: none !important; // 禁止浮动
-    }
-  }
-}
-
-// 组件选择对话框样式
-.widget-selection {
-  max-height: 60vh;
-  overflow-y: auto;
-  
-  .widget-container {
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    
-    .widget-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      
-      h4 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-      }
-    }
-    
-    .widget-card {
-      flex: 1;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      
-      &.is-selected {
-        border-color: #409EFF;
-        box-shadow: 0 0 8px rgba(64, 158, 255, 0.6);
-      }
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-      
-      .preview-area {
-        height: 160px;
-        overflow: hidden;
-        background-color: #f5f7fa;
-        border-radius: 4px;
-        position: relative;
-        pointer-events: none; // 阻止点击事件，使组件不可交互
-        
-        .preview-component {
-          transform: scale(0.8);
-          transform-origin: top left;
-        }
-      }
-    }
-    
-    .widget-description {
-      color: #606266;
-      font-size: 13px;
-      line-height: 1.4;
-      
-      p {
-        margin: 0;
-      }
-    }
-  }
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  .channel-selection {
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
 }
 
 .text-center {
   text-align: center;
 }
-
-.empty-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  height: 60px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-      color: #909399;
-  font-style: italic;
-  border: 1px dashed #dcdfe6;
-  margin: 0; // 移除外边距
-  padding: 0; // 移除内边距
-}
-
-// 布局预览对话框样式
-.preview-dialog {
-  ::v-deep .el-dialog__body {
-    padding: 0;
-    
-    .layout-preview {
-      border-radius: 0;
-      box-shadow: none;
-      margin-top: 20px;
-    }
-  }
-  
-  ::v-deep .el-dialog__header {
-    background-color: #409EFF;
-    padding: 15px 20px;
-    
-    .el-dialog__title {
-      color: white;
-      font-size: 18px;
-    }
-    
-    .el-dialog__headerbtn {
-      top: 15px;
-      
-      .el-dialog__close {
-        color: white;
-      }
-    }
-  }
-  
-  .preview-toolbar {
-    padding: 15px 20px;
-    background-color: #ecf5ff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .preview-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #409EFF;
-      
-      i {
-        font-size: 18px;
-      }
-    }
-  }
-}
-
-.import-dialog-content {
-  padding: 0;
-  
-  .layout-uploader {
-    text-align: center;
-    
-    .el-upload__tip {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #909399;
-    }
-    
-    .el-upload-dragger {
-      width: 100%;
-      height: 160px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      
-      i {
-        font-size: 48px;
-        margin-bottom: 10px;
-      }
-      
-      .el-upload__text {
-        font-size: 16px;
-        line-height: 1.4;
-        padding: 0 15px;
-        text-align: center;
-        word-break: break-word;
-        
-        em {
-          color: #409EFF;
-          font-style: normal;
-        }
-      }
-    }
-  }
-  
-  .import-tips {
-    margin-top: 15px;
-    
-    p {
-      margin: 5px 0 0;
-      font-size: 12px;
-    }
-  }
-}
-
-::v-deep .import-layout-dialog {
-  max-width: 600px;
-  border-radius: 8px;
-  overflow: hidden;
-  
-  .el-dialog__header {
-    padding: 15px 20px;
-    border-bottom: 1px solid #EBEEF5;
-  }
-  
-  .el-dialog__body {
-    padding: 20px;
-  }
-  
-  .el-dialog__footer {
-    padding: 10px 20px 15px;
-    border-top: 1px solid #EBEEF5;
-  }
-  
-  .el-upload-dragger {
-    border-radius: 6px;
-  }
-}
-
-// 文件上传组件样式
-::v-deep .el-upload {
-  width: 100%;
-  
-  .el-upload-dragger {
-    width: 100% !important;
-  }
-}
-
-/* 快速创建布局对话框样式 */
-.row-config {
-  margin-bottom: 20px;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #f5f7fa;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  
-  .row-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    
-    .row-label {
-      font-weight: 500;
-      color: #606266;
-    }
-  }
-  
-  .column-config {
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    
-    .config-label {
-      margin-left: 8px;
-      color: #606266;
-    }
-  }
-  
-  .row-preview {
-    margin-top: 16px;
-    
-    .preview-row {
-      display: flex;
-      height: 40px;
-      background-color: #ecf5ff;
-      border-radius: 4px;
-      overflow: hidden;
-      
-      .preview-col {
-        height: 100%;
-        background-color: #409EFF;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        border-right: 1px solid #ecf5ff;
-        
-        &:last-child {
-          border-right: none;
-        }
-        
-        &:nth-child(even) {
-          background-color: #66b1ff;
-        }
-      }
-    }
-  }
-}
-
-.layout-popover {
-  padding: 0;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-}
-
-.quick-layout-form {
-  padding: 0;
-  
-  .form-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
-    gap: 20px;
-    
-    .form-group {
-      flex: 1;
-      min-width: 180px;
-      max-width: calc(33.33% - 14px);
-      
-      @media (max-width: 768px) {
-        min-width: 100%;
-        max-width: 100%;
-      }
-    }
-    
-    @media (max-width: 600px) {
-      flex-direction: column;
-      gap: 15px;
-    }
-  }
-  
-  .form-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0;
-    
-    .label-wrapper {
-      min-width: 55px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-right: 10px;
-      
-      label {
-        font-weight: 500;
-        color: #606266;
-        font-size: 13px;
-        white-space: nowrap;
-      }
-      
-      .el-icon-question {
-        color: #909399;
-        cursor: help;
-        font-size: 14px;
-        margin-right: 2px;
-        
-        &:hover {
-          color: #409EFF;
-        }
-      }
-    }
-    
-    .input-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      
-      .form-tip {
-        font-size: 12px;
-        color: #909399;
-        margin-top: 4px;
-      }
-      
-      .el-input-number,
-      .el-input,
-      .el-select {
-        width: 100%;
-      }
-    }
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 15px;
-  }
-}
 </style>
+
 <style>
 /* 修复行高输入框中的 px 后缀垂直居中问题 */
 .layout-node .node-controls .row-settings .setting-item .el-input .el-input__suffix {
