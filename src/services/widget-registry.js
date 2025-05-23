@@ -191,7 +191,6 @@ const widgetTypes = {
 // 预设的栏目样式
 const defaultWidgets = [
   {
-    id: 'carousel-1',
     name: '轮播图样式1',
     type: 'carousel-1',
     description: '自动播放大图展示',
@@ -209,7 +208,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'carousel-2',
     name: '轮播图样式2',
     type: 'carousel-2',
     description: '手动切换，缩略图导航',
@@ -224,7 +222,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'carousel-3',
     name: '轮播图样式3',
     type: 'carousel-3',
     description: '左图右文，标题列表',
@@ -239,7 +236,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'news-list-1',
     name: '列表样式1',
     type: 'news-list-1',
     description: '带项目符号的标题列表',
@@ -254,7 +250,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'news-list-2',
     name: '列表样式2',
     type: 'news-list-2',
     description: '简洁标题日期列表',
@@ -269,7 +264,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'news-list-3',
     name: '列表样式3',
     type: 'news-list-3',
     description: '图文列表',
@@ -283,7 +277,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'image-news-1',
     name: '图片样式1',
     type: 'image-news',
     description: '网格布局',
@@ -297,7 +290,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'image-news-2',
     name: '图片样式2',
     type: 'image-news',
     description: '瀑布流布局',
@@ -311,7 +303,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'nav-bar-1',
     name: '导航栏样式1',
     type: 'nav-bar',
     description: '导航栏样式1',

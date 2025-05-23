@@ -41,6 +41,7 @@
       title="图文混排列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
+      append-to-body
       @closed="handleDialogClosed">
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="组件高度">
@@ -93,10 +94,6 @@ export default {
         categoryId: 'finance',
         maxItems: 4
       })
-    },
-    widgetId: {
-      type: String,
-      default: ''
     }
   },
   data() {
@@ -118,18 +115,16 @@ export default {
     // 当配置变化时，重新获取数据
     config: {
       handler() {
-        this.fetchNews();
+        this.fetchData();
       },
       deep: true
     }
   },
   created() {
-    this.fetchNews();
-    // 监听组件配置请求事件
-    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+    this.fetchData();
   },
   methods: {
-    async fetchNews() {
+    async fetchData() {
       this.loading = true;
       try {
         // 从API获取新闻数据
@@ -168,11 +163,9 @@ export default {
         }
       });
     },
-    handleConfigRequest(widget) {
-      if (widget && widget.id === this.widgetId) {
-        this.configDialogVisible = true;
-        this.tempConfig = JSON.parse(JSON.stringify(this.config));
-      }
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.tempConfig = {};

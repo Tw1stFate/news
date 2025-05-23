@@ -58,6 +58,47 @@
     
     <!-- 搜索弹窗 -->
     <search-dialog :visible.sync="searchDialogVisible" />
+    
+    <!-- 配置对话框 -->
+    <el-dialog
+      title="导航栏组件配置"
+      :visible.sync="configDialogVisible"
+      width="600px"
+      append-to-body
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="100px" size="small">
+        <el-form-item label="Logo URL">
+          <el-input v-model="tempConfig.logoUrl" placeholder="输入Logo图片URL"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="显示搜索框">
+          <el-switch v-model="tempConfig.showSearch"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="菜单项">
+          <div v-for="(item, index) in tempConfig.menuItems" :key="index" class="menu-item-config">
+            <div class="menu-item-form">
+              <el-input v-model="item.label" placeholder="菜单标签" size="mini" style="width: 120px;"></el-input>
+              <el-input v-model="item.url" placeholder="URL" size="mini" style="width: 200px;" v-if="!item.dropdown"></el-input>
+              <el-select v-model="item.target" size="mini" style="width: 100px;" v-if="!item.dropdown">
+                <el-option label="当前窗口" value="_self"></el-option>
+                <el-option label="新窗口" value="_blank"></el-option>
+              </el-select>
+              <el-checkbox v-model="item.dropdown" @change="handleDropdownChange(item)">下拉菜单</el-checkbox>
+              <el-checkbox v-model="item.active">激活</el-checkbox>
+              <el-button type="danger" size="mini" icon="el-icon-delete" @click="removeMenuItem(index)"></el-button>
+            </div>
+          </div>
+          <div class="add-menu-item">
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="addMenuItem">添加菜单项</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -87,7 +128,9 @@ export default {
       branchList: [],
       loading: false,
       mainMenuItems: [],
-      searchDialogVisible: false
+      searchDialogVisible: false,
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   created() {
@@ -116,6 +159,53 @@ export default {
     document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
+    // 配置对话框方法
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      
+      // 确保menuItems存在
+      if (!this.tempConfig.menuItems || !this.tempConfig.menuItems.length) {
+        this.tempConfig.menuItems = [...this.mainMenuItems];
+      }
+    },
+    
+    handleDialogClosed() {
+      this.configDialogVisible = false;
+    },
+    
+    saveConfig() {
+      this.$root.$emit('widget-config-updated', 'nav-bar', this.tempConfig);
+      this.configDialogVisible = false;
+    },
+    
+    addMenuItem() {
+      this.tempConfig.menuItems.push({
+        label: '新菜单项',
+        url: '#',
+        target: '_self',
+        active: false,
+        dropdown: false
+      });
+    },
+    
+    removeMenuItem(index) {
+      this.tempConfig.menuItems.splice(index, 1);
+    },
+    
+    handleDropdownChange(item) {
+      if (item.dropdown) {
+        // 如果设为下拉菜单，清除url和target
+        item.url = '';
+        item.target = '';
+      } else {
+        // 如果取消下拉菜单，设置默认值
+        item.url = '#';
+        item.target = '_self';
+      }
+    },
+    
+    // 现有方法
     async loadBranchData() {
       // 预加载分行数据，但不显示
       this.loading = true;

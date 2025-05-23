@@ -35,6 +35,7 @@
       title="新闻列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
+      append-to-body
       @closed="handleDialogClosed">
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="标题">
@@ -84,14 +85,6 @@ export default {
         categoryId: 'domestic',
         maxItems: 6
       })
-    },
-    channelId: {
-      type: String,
-      default: ''
-    },
-    widgetId: {
-      type: String,
-      default: ''
     }
   },
   data() {
@@ -110,12 +103,6 @@ export default {
     }
   },
   watch: {
-    channelId: {
-      handler() {
-        this.fetchNews();
-      },
-      immediate: true
-    },
     currentPage() {
       this.fetchNews();
     },
@@ -127,26 +114,26 @@ export default {
     }
   },
   created() {
-    this.fetchNews();
-    // 监听组件配置请求事件
-    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+    this.fetchData();
   },
   beforeDestroy() {
-    // 移除事件监听
-    this.$root.$off('widget-config-requested', this.handleConfigRequest);
+    // Component cleanup
   },
   methods: {
+    async fetchData() {
+      this.fetchNews();
+    },
+    
     async fetchNews() {
-      if (!this.channelId) return;
+      if (!this.config.categoryId) return;
       
       this.loading = true;
       try {
-        const result = await api.getNewsByChannel(
-          this.channelId, 
+        const result = await api.getNewsByCategory(
+          this.config.categoryId, 
           this.currentPage, 
           this.config.showPagination ? this.config.pageSize : this.config.limit
         );
-        
         this.newsItems = result.items || [];
         this.total = result.total || 0;
       } catch (error) {
@@ -165,27 +152,17 @@ export default {
     handleMoreClick() {
       this.$emit('more-click', this.config.categoryId || 'domestic');
     },
-    // 处理组件配置请求
-    handleConfigRequest(widget) {
-      // 检查是否是当前组件的配置请求
-      if (widget && widget.id === this.widgetId && widget.type === 'news-list-1') {
-        // 复制当前配置到临时配置对象
-        this.tempConfig = JSON.parse(JSON.stringify(this.config));
-        // 显示配置对话框
-        this.configDialogVisible = true;
-      }
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
-    // 保存配置
-    saveConfig() {
-      // 触发配置更新事件
-      this.$root.$emit('widget-config-updated', this.widgetId, this.tempConfig);
-      // 关闭对话框
+    handleDialogClosed() {
       this.configDialogVisible = false;
     },
-    // 对话框关闭处理
-    handleDialogClosed() {
-      // 清空临时配置
-      this.tempConfig = {};
+    saveConfig() {
+      // 向父组件传递配置更新消息
+      this.$root.$emit('widget-config-updated', 'news-list-1', this.tempConfig);
+      this.configDialogVisible = false;
     }
   }
 };

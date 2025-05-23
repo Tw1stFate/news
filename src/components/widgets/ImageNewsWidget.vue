@@ -22,6 +22,44 @@
       </div>
     </div>
     <el-empty v-else description="暂无新闻" />
+    
+    <!-- 配置对话框 -->
+    <el-dialog
+      title="图文新闻组件配置"
+      :visible.sync="configDialogVisible"
+      width="500px"
+      append-to-body
+      @closed="handleDialogClosed">
+      <el-form :model="tempConfig" label-width="100px" size="small">
+        <el-form-item label="标题">
+          <el-input v-model="tempConfig.title"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="图片位置">
+          <el-select v-model="tempConfig.imagePosition">
+            <el-option label="左侧" value="left"></el-option>
+            <el-option label="右侧" value="right"></el-option>
+            <el-option label="顶部" value="top"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="显示描述">
+          <el-switch v-model="tempConfig.description"></el-switch>
+        </el-form-item>
+        
+        <el-form-item label="内容分类">
+          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
+            <el-option label="生活方式" value="lifestyle"></el-option>
+            <el-option label="文化" value="culture"></el-option>
+            <el-option label="社会新闻" value="social"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="configDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveConfig">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -46,7 +84,9 @@ export default {
   data() {
     return {
       loading: true,
-      news: null
+      news: null,
+      configDialogVisible: false,
+      tempConfig: {}
     };
   },
   computed: {
@@ -82,6 +122,23 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    
+    // 新增：显示设置对话框的方法
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
+    },
+    
+    // 对话框关闭处理
+    handleDialogClosed() {
+      this.configDialogVisible = false;
+    },
+    
+    // 保存配置
+    saveConfig() {
+      this.$root.$emit('widget-config-updated', 'image-news', this.tempConfig);
+      this.configDialogVisible = false;
     }
   }
 };

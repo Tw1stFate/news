@@ -373,7 +373,13 @@ const LayoutNode = Vue.component('layout-node', {
     showWidgetSettings() {
       // 向父组件发送显示组件设置请求
       if (this.node.widget) {
-        this.$root.$emit('widget-config-requested', this.node.widget);
+        // 尝试获取组件实例
+        const widgetComponent = this.$refs.widgetComponent;
+        
+        // 如果组件实例存在并且有showSettingDialog方法，直接调用
+        if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
+          widgetComponent.showSettingDialog();
+        }
       }
     },
     moveRowUp() {
@@ -512,6 +518,7 @@ const LayoutNode = Vue.component('layout-node', {
                 channelId: this.node.channelId,
                 widgetId: this.node.widget.id
               },
+              ref: 'widgetComponent',
               class: 'preview-component'
             }),
             // 悬停时显示的遮罩层
@@ -528,7 +535,11 @@ const LayoutNode = Vue.component('layout-node', {
                   on: { 
                     click: (e) => {
                       e.stopPropagation();
-                      this.showWidgetSettings();
+                      // 直接调用组件的方法
+                      const widgetComponent = this.$refs.widgetComponent;
+                      if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
+                        widgetComponent.showSettingDialog();
+                      }
                     } 
                   }
                 }, '设置'),
@@ -1902,8 +1913,11 @@ export default {
     // 显示组件设置对话框
     showWidgetSettings(widget) {
       // 每个组件将负责实现自己的配置对话框
-      // 通过事件总线触发组件配置事件
-      this.$root.$emit('widget-config-requested', widget);
+      // 直接调用组件的showSettingDialog方法
+      const componentInstance = this.$refs[`widget_${widget.type}`];
+      if (componentInstance && typeof componentInstance.showSettingDialog === 'function') {
+        componentInstance.showSettingDialog();
+      }
     }
   },
   watch: {

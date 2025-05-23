@@ -34,6 +34,7 @@
       title="红标题+时间列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
+      append-to-body
       @closed="handleDialogClosed">
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="组件高度">
@@ -91,10 +92,6 @@ export default {
         categoryId: 'domestic',
         maxItems: 7
       })
-    },
-    widgetId: {
-      type: String,
-      default: ''
     }
   },
   data() {
@@ -114,25 +111,22 @@ export default {
     // 当配置变化时，重新获取数据
     config: {
       handler() {
-        this.fetchNews();
+        this.fetchData();
       },
       deep: true
     }
   },
   created() {
-    this.fetchNews();
-    // 监听组件配置请求事件
-    this.$root.$on('widget-config-requested', this.handleConfigRequest);
+    this.fetchData();
   },
   beforeDestroy() {
-    // 移除事件监听
-    this.$root.$off('widget-config-requested', this.handleConfigRequest);
+    // Component cleanup
   },
   methods: {
-    async fetchNews() {
+    async fetchData() {
       this.loading = true;
       try {
-        // 从API获取新闻数据
+        // 从API获取轮播数据
         this.newsItems = await api.getNewsByCategory(
           this.config.categoryId || 'domestic',
           this.config.maxItems || 7
@@ -152,21 +146,16 @@ export default {
     handleMoreClick() {
       this.$emit('more-click', this.config.categoryId || 'domestic');
     },
-    handleConfigRequest(widget) {
-      if (widget && widget.id === this.widgetId) {
-        this.configDialogVisible = true;
-        this.tempConfig = JSON.parse(JSON.stringify(this.config));
-      }
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.tempConfig = {};
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', {
-        widgetId: this.widgetId,
-        config: this.tempConfig
-      });
+      this.$root.$emit('widget-config-updated', 'news-list-2', this.tempConfig);
       this.configDialogVisible = false;
     }
   }

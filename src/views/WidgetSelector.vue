@@ -17,28 +17,29 @@
           <el-row :gutter="20">
             <!-- 导航栏组件需要占用完整一行 -->
             <el-col 
-              v-for="widget in getWidgetsByCategory(category)" 
-              :key="widget.id"
+              v-for="(widget, index) in getWidgetsByCategory(category)" 
+              :key="`${widget.type}_${index}`"
               :span="category === '导航栏' ? 24 : 12">
               
               <div class="widget-container">
                 <div class="widget-header">
                   <h4>{{ widget.name }}</h4>
                   <el-button 
-                    v-if="selectedWidgetId === widget.id"
+                    v-if="selectedWidgetType === widget.type && selectedWidgetIndex === index"
                     type="primary" 
                     size="mini" 
                     icon="el-icon-setting"
-                    @click="showWidgetSettings(widget)">设置</el-button>
+                    @click="showWidgetSettings(widget, index)">设置</el-button>
                 </div>
                 <el-card 
                   class="widget-card" 
-                  :class="{ 'is-selected': selectedWidgetId === widget.id }"
-                  @click.native="selectWidget(widget)">
+                  :class="{ 'is-selected': selectedWidgetType === widget.type && selectedWidgetIndex === index }"
+                  @click.native="selectWidget(widget, index)">
                   <div class="preview-area">
                     <component 
                       :is="getWidgetComponent(widget.type)"
                       :config="widget.config"
+                      :ref="`widget_${widget.type}_${index}`"
                       class="preview-component" />
                   </div>
                 </el-card>
@@ -53,7 +54,7 @@
     </div>
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="confirmSelection" :disabled="!selectedWidgetId">确定</el-button>
+      <el-button type="primary" @click="confirmSelection" :disabled="!selectedWidgetType">确定</el-button>
     </div>
   </el-dialog>
 </template>
@@ -77,7 +78,8 @@ export default {
   data() {
     return {
       activeWidgetCategory: '轮播图',
-      selectedWidgetId: null
+      selectedWidgetType: null,
+      selectedWidgetIndex: -1
     }
   },
   computed: {
@@ -100,8 +102,9 @@ export default {
     },
     
     // 选择组件
-    selectWidget(widget) {
-      this.selectedWidgetId = widget.id;
+    selectWidget(widget, index) {
+      this.selectedWidgetType = widget.type;
+      this.selectedWidgetIndex = index;
     },
     
     // 获取组件
@@ -110,9 +113,14 @@ export default {
     },
     
     // 显示组件设置
-    showWidgetSettings(widget) {
-    console.log('showWidgetSettings', widget);
-      this.$root.$emit('widget-config-requested', widget);
+    showWidgetSettings(widget, index) {
+      // Get the component reference
+      const widgetComponent = this.$refs[`widget_${widget.type}_${index}`][0];
+      
+      // Use the component's showSettingDialog method
+      if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
+        widgetComponent.showSettingDialog();
+      }
     },
     
     // 关闭对话框
@@ -124,11 +132,13 @@ export default {
     
     // 确认选择
     confirmSelection() {
-      if (!this.selectedWidgetId) {
+      if (!this.selectedWidgetType) {
         return;
       }
       
-      const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
+      const categoryWidgets = this.getWidgetsByCategory(this.activeWidgetCategory);
+      const widget = categoryWidgets[this.selectedWidgetIndex];
+      
       if (!widget) {
         this.$message.error('选择的组件无效');
         return;
@@ -139,7 +149,7 @@ export default {
       
       this.$emit('confirm', {
         nodeId: this.nodeId,
-        widgetId: this.selectedWidgetId,
+        widgetType: this.selectedWidgetType,
         channelId,
         widget
       });
@@ -150,7 +160,8 @@ export default {
     
     // 重置状态
     reset() {
-      this.selectedWidgetId = null;
+      this.selectedWidgetType = null;
+      this.selectedWidgetIndex = -1;
     },
     
     // 查找当前节点
@@ -191,7 +202,10 @@ export default {
         // 当打开对话框时，如果节点已有关联的组件，自动选中
         const node = this.findNode();
         if (node && node.widget) {
-          this.selectedWidgetId = node.widget.id;
+          this.selectedWidgetType = node.widget.type;
+          // Find the index of this widget type in the current category
+          const categoryWidgets = this.getWidgetsByCategory(this.activeWidgetCategory);
+          this.selectedWidgetIndex = categoryWidgets.findIndex(w => w.type === node.widget.type);
         }
       } else {
         this.reset();

@@ -57,6 +57,7 @@
       title="轮播图+缩略图组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
+      append-to-body
       @closed="handleDialogClosed">
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="轮播高度">
@@ -109,16 +110,12 @@ export default {
       required: true,
       default: () => ({
         height: 360,
-        autoplay: false,
-        interval: 0,
+        autoplay: true,
+        interval: 5000,
         showTitle: true,
         categoryId: 'headlines',
         maxItems: 5
       })
-    },
-    widgetId: {
-      type: String,
-      default: ''
     }
   },
   data() {
@@ -146,12 +143,9 @@ export default {
   },
   created() {
     this.fetchData();
-    // 监听组件配置请求事件
-    this.$root.$on('widget-config-requested', this.handleConfigRequest);
   },
   beforeDestroy() {
-    // 移除事件监听
-    this.$root.$off('widget-config-requested', this.handleConfigRequest);
+    // Component cleanup
   },
   methods: {
     async fetchData() {
@@ -208,21 +202,16 @@ export default {
         }
       }
     },
-    handleConfigRequest(widget) {
-      if (widget && widget.id === this.widgetId) {
-        this.configDialogVisible = true;
-        this.tempConfig = JSON.parse(JSON.stringify(this.config));
-      }
+    showSettingDialog() {
+      this.configDialogVisible = true;
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.configDialogVisible = false;
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', {
-        widgetId: this.widgetId,
-        config: this.tempConfig
-      });
+      this.$root.$emit('widget-config-updated', 'carousel-2', this.tempConfig);
       this.configDialogVisible = false;
     }
   }

@@ -48,6 +48,7 @@
       title="轮播组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
+      append-to-body
       @closed="handleDialogClosed">
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="轮播高度">
@@ -106,10 +107,6 @@ export default {
         categoryId: 'headlines',
         maxItems: 5
       })
-    },
-    widgetId: {
-      type: String,
-      default: ''
     }
   },
   data() {
@@ -136,13 +133,11 @@ export default {
     }
   },
   created() {
+    console.log('=======CarouselWidget1 created');
     this.fetchData();
-    // 监听组件配置请求事件
-    this.$root.$on('widget-config-requested', this.handleConfigRequest);
   },
   beforeDestroy() {
-    // 移除事件监听
-    this.$root.$off('widget-config-requested', this.handleConfigRequest);
+    // Component cleanup
   },
   methods: {
     async fetchData() {
@@ -169,20 +164,17 @@ export default {
       this.currentIndex = index;
       this.$refs.carousel.setActiveItem(index);
     },
-    // 处理组件配置请求
-    handleConfigRequest(widget) {
-      // 检查是否是当前组件的配置请求
-      if (widget && widget.id === this.widgetId && widget.type === 'carousel-1') {
-        // 复制当前配置到临时配置对象
-        this.tempConfig = JSON.parse(JSON.stringify(this.config));
-        // 显示配置对话框
-        this.configDialogVisible = true;
-      }
+    // 显示设置对话框的方法
+    showSettingDialog() {
+      // 复制当前配置到临时配置对象
+      this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      // 显示配置对话框
+      this.configDialogVisible = true;
     },
     // 保存配置
     saveConfig() {
       // 触发配置更新事件
-      this.$root.$emit('widget-config-updated', this.widgetId, this.tempConfig);
+      this.$root.$emit('widget-config-updated', 'carousel-1', this.tempConfig);
       // 关闭对话框
       this.configDialogVisible = false;
     },
@@ -191,7 +183,7 @@ export default {
       // 清空临时配置
       this.tempConfig = {};
     }
-  }
+  },
 };
 </script>
 
