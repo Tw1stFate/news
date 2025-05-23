@@ -127,13 +127,13 @@ export default {
     async fetchData() {
       this.loading = true;
       try {
-        // 从API获取新闻数据
-        this.newsItems = await api.getNewsByCategory(
+        // 从API获取新闻列表数据
+        this.newsItems = await api.getNewsByColumn(
           this.config.categoryId || 'finance',
           this.config.maxItems || 4
         );
       } catch (error) {
-        console.error('获取新闻列表失败:', error);
+        console.error('获取新闻数据失败:', error);
         this.newsItems = [];
       } finally {
         this.loading = false;

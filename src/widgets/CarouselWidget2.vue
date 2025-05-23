@@ -152,7 +152,7 @@ export default {
       this.loading = true;
       try {
         // 从API获取轮播数据
-        this.items = await api.getNewsByCategory(
+        this.items = await api.getNewsByColumn(
           this.config.categoryId || 'headlines',
           this.config.maxItems || 5
         );

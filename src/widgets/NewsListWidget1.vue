@@ -122,29 +122,23 @@ export default {
   },
   methods: {
     async fetchData() {
-      this.fetchNews();
-    },
-    
-    async fetchNews() {
-      if (!this.config.categoryId) return;
-      
       this.loading = true;
       try {
-        const result = await api.getNewsByCategory(
-          this.config.categoryId, 
-          this.currentPage, 
-          this.config.showPagination ? this.config.pageSize : this.config.limit
+        // 从API获取新闻列表数据
+        const result = await api.getNewsByColumn(
+          this.config.categoryId || 'domestic',
+          this.config.maxItems || 6
         );
-        this.newsItems = result.items || [];
-        this.total = result.total || 0;
+        
+        this.newsItems = result;
       } catch (error) {
-        console.error('获取新闻列表失败:', error);
+        console.error('获取新闻数据失败:', error);
         this.newsItems = [];
-        this.total = 0;
       } finally {
         this.loading = false;
       }
     },
+    
     handleItemClick(item) {
       if (item.link) {
         window.open(item.link, '_blank');

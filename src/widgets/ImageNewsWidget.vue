@@ -11,14 +11,14 @@
         </template>
       </el-skeleton>
     </div>
-    <div v-else-if="news" class="image-news-content" :class="positionClass">
+    <div v-else-if="newsItems && newsItems.length > 0" class="image-news-content" :class="positionClass">
       <div class="news-image">
-        <img :src="news.image" :alt="news.title">
+        <img :src="newsItems[0].image" :alt="newsItems[0].title">
       </div>
       <div class="news-details">
-        <h4 class="news-title">{{ news.title }}</h4>
-        <p v-if="config.description" class="news-summary">{{ news.summary }}</p>
-        <div class="news-date">{{ news.date }}</div>
+        <h4 class="news-title">{{ newsItems[0].title }}</h4>
+        <p v-if="config.description" class="news-summary">{{ newsItems[0].summary }}</p>
+        <div class="news-date">{{ newsItems[0].date }}</div>
       </div>
     </div>
     <el-empty v-else description="暂无新闻" />
@@ -84,7 +84,7 @@ export default {
   data() {
     return {
       loading: true,
-      news: null,
+      newsItems: null,
       configDialogVisible: false,
       tempConfig: {}
     };
@@ -99,26 +99,27 @@ export default {
     // 当配置变化时，重新获取数据
     config: {
       handler() {
-        this.fetchNews();
+        this.fetchData();
       },
       deep: true
     }
   },
   created() {
-    this.fetchNews();
+    this.fetchData();
   },
   methods: {
-    async fetchNews() {
+    async fetchData() {
       this.loading = true;
       try {
-        const newsList = await api.getNewsByCategory(
+        // 从API获取图片新闻数据
+        const newsList = await api.getNewsByColumn(
           this.config.categoryId || 'lifestyle',
-          1
+          this.config.maxItems || 6
         );
-        this.news = newsList.length > 0 ? newsList[0] : null;
+        this.newsItems = newsList.filter(item => item.image);
       } catch (error) {
-        console.error('获取新闻失败:', error);
-        this.news = null;
+        console.error('获取图片新闻数据失败:', error);
+        this.newsItems = [];
       } finally {
         this.loading = false;
       }
