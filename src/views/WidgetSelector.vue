@@ -1,52 +1,70 @@
 <template>
-  <div class="widget-selector">
-    <div class="selector-header">
-      <div class="header-controls">
-        <h2>选择栏目样式</h2>
-      </div>
-    </div>
-
-    <div class="selector-content">
-      <el-tabs v-model="activeGroup" type="card" @tab-click="handleTabClick">
+  <el-dialog
+    title="选择栏目样式"
+    :visible.sync="visible"
+    width="80%"
+    :before-close="handleClose">
+    <div class="widget-selection">
+      <el-tabs v-model="activeWidgetCategory" type="card">
         <el-tab-pane 
-          v-for="group in widgetGroups" 
-          :key="group" 
-          :label="group" 
-          :name="group">
+          v-for="category in widgetCategories" 
+          :key="category" 
+          :label="category" 
+          :name="category">
+          
+          <el-row :gutter="20">
+            <!-- 导航栏组件需要占用完整一行 -->
+            <el-col 
+              v-for="widget in getWidgetsByCategory(category)" 
+              :key="widget.id"
+              :span="category === '导航栏' ? 24 : 12">
+              
+              <div class="widget-container">
+                <div class="widget-header">
+                  <h4>{{ widget.name }}</h4>
+                  <el-button 
+                    v-if="selectedWidgetId === widget.id"
+                    type="primary" 
+                    size="mini" 
+                    icon="el-icon-setting"
+                    @click="showWidgetSettings(widget)">设置</el-button>
+                </div>
+                <el-card 
+                  class="widget-card" 
+                  :class="{ 'is-selected': selectedWidgetId === widget.id }"
+                  @click.native="selectWidget(widget)">
+                  <div class="preview-area">
+                    <component 
+                      :is="getWidgetComponent(widget.type)"
+                      :config="widget.config"
+                      class="preview-component" />
+                  </div>
+                </el-card>
+                <div class="widget-description">
+                  <p>{{ widget.description }}</p>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
         </el-tab-pane>
       </el-tabs>
-
-      <div class="widget-list">
-        <el-row :gutter="20">
-          <el-col v-for="widget in currentGroupWidgets" :key="widget.id" :span="12">
-            <el-card 
-              class="widget-card" 
-              :class="{ 'is-selected': selectedWidgetId === widget.id }"
-              @click.native="selectWidget(widget)">
-              <div class="widget-preview">
-                <div v-if="hoveredWidgetId === widget.id" class="widget-overlay">
-                  <el-button 
-                    type="primary" 
-                    icon="el-icon-setting" 
-                    circle>
-                  </el-button>
-                </div>
-                <component 
-                  :is="getWidgetComponent(widget.type)"
-                  :config="widget.config"
-                  class="preview-component"
-                  @mouseenter.native="hoveredWidgetId = widget.id"
-                  @mouseleave.native="hoveredWidgetId = null" />
-              </div>
-              <div class="widget-info text-center">
-                <h4>{{ widget.name }}</h4>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
     </div>
-  </div>
+    <div slot="footer" class="dialog-footer">
+      <div class="channel-selection" v-if="selectedWidgetId">
+        <span>关联栏目：</span>
+        <el-select v-model="selectedChannelId" placeholder="请选择栏目">
+          <el-option
+            v-for="channel in channels"
+            :key="channel.id"
+            :label="channel.name"
+            :value="channel.id">
+          </el-option>
+        </el-select>
+      </div>
+      <el-button @click="handleClose">取消</el-button>
+      <el-button type="primary" @click="confirmSelection" :disabled="!selectedWidgetId">确定</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script>
@@ -55,11 +73,21 @@ import WidgetRegistry from '@/services/widget-registry';
 
 export default {
   name: 'WidgetSelector',
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    },
+    nodeId: {
+      type: String,
+      default: null
+    }
+  },
   data() {
     return {
-      activeGroup: '',
-      hoveredWidgetId: null,
-      selectedWidgetId: null
+      activeWidgetCategory: '轮播图',
+      selectedWidgetId: null,
+      selectedChannelId: null
     }
   },
   computed: {
@@ -70,139 +98,161 @@ export default {
       return WidgetRegistry.getDefaultWidgets();
     },
     
-    widgetGroups() {
-      return WidgetRegistry.getGroups();
-    },
-    
-    currentGroupWidgets() {
-      if (!this.activeGroup) return [];
-      return this.widgets.filter(widget => widget.group === this.activeGroup);
-    }
-  },
-  created() {
-    // 加载栏目数据
-    this.loadChannels();
-    // 默认选中第一个分组
-    if (this.widgetGroups.length > 0) {
-      this.activeGroup = this.widgetGroups[0];
+    // 组件分类列表
+    widgetCategories() {
+      return WidgetRegistry.getCategories();
     }
   },
   methods: {
-    async loadChannels() {
-      await this.$store.dispatch('channel/fetchChannels');
+    // 根据分类获取组件
+    getWidgetsByCategory(category) {
+      return this.widgets.filter(widget => widget.category === category);
     },
     
-    handleTabClick(tab) {
-      this.activeGroup = tab.name;
+    // 选择组件
+    selectWidget(widget) {
+      this.selectedWidgetId = widget.id;
     },
     
+    // 获取组件
     getWidgetComponent(type) {
       return WidgetRegistry.get(type);
     },
     
-    selectWidget(widget) {
-      this.selectedWidgetId = widget.id;
-      this.$emit('select', widget);
+    // 显示组件设置
+    showWidgetSettings(widget) {
+      this.$root.$emit('widget-config-requested', widget);
+    },
+    
+    // 关闭对话框
+    handleClose() {
+      this.reset();
+      this.$emit('update:visible', false);
+      this.$emit('close');
+    },
+    
+    // 确认选择
+    confirmSelection() {
+      if (!this.selectedWidgetId) {
+        return;
+      }
+      
+      const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
+      if (!widget) {
+        this.$message.error('选择的组件无效');
+        return;
+      }
+      
+      this.$emit('confirm', {
+        nodeId: this.nodeId,
+        widgetId: this.selectedWidgetId,
+        channelId: this.selectedChannelId,
+        widget
+      });
+      
+      this.reset();
+      this.$emit('update:visible', false);
+    },
+    
+    // 重置状态
+    reset() {
+      this.selectedWidgetId = null;
+      this.selectedChannelId = null;
     }
+  },
+  watch: {
+    visible(val) {
+      if (val) {
+        // 默认选中第一个分类
+        this.activeWidgetCategory = this.widgetCategories[0] || '轮播图';
+      } else {
+        this.reset();
+      }
+    }
+  },
+  created() {
+    console.log('WidgetSelector created');
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.widget-selector {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f0f2f5;
-
-  .selector-header {
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-    padding: 0;
-
-    .header-controls {
-      height: 60px;
+// 组件选择对话框样式
+.widget-selection {
+  max-height: 60vh;
+  overflow-y: auto;
+  
+  .widget-container {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
+    .widget-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 24px;
-
-      h2 {
+      margin-bottom: 8px;
+      
+      h4 {
         margin: 0;
-        font-size: 20px;
-        color: #303133;
+        font-size: 16px;
         font-weight: 500;
       }
     }
-  }
-
-  .selector-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px;
-  }
-
-  .widget-list {
-    margin-top: 20px;
-  }
-
-  .widget-card {
-    margin-bottom: 20px;
-    transition: all 0.3s;
-    background: #fff;
-    border: 1px solid #ebeef5;
-    border-radius: 4px;
-    overflow: hidden;
-    cursor: pointer;
-
-    &:hover {
-      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    }
-
-    &.is-selected {
-      border: 2px solid #409EFF;
-    }
-
-    .widget-preview {
-      position: relative;
-      height: 300px;
-      overflow: hidden;
-      border-bottom: 1px solid #ebeef5;
-
-      .widget-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10;
+    
+    .widget-card {
+      flex: 1;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      
+      &.is-selected {
+        border-color: #409EFF;
+        box-shadow: 0 0 8px rgba(64, 158, 255, 0.6);
       }
-
-      :deep(.preview-component) {
-        width: 100%;
-        height: 100%;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .preview-area {
+        height: 160px;
+        overflow: hidden;
+        background-color: #f5f7fa;
+        border-radius: 4px;
+        position: relative;
+        pointer-events: none; // 阻止点击事件，使组件不可交互
+        
+        .preview-component {
+          transform: scale(0.8);
+          transform-origin: top left;
+        }
       }
     }
-
-    .widget-info {
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-
-      h4 {
+    
+    .widget-description {
+      color: #606266;
+      font-size: 13px;
+      line-height: 1.4;
+      
+      p {
         margin: 0;
-        font-size: 14px;
-        color: #606266;
-        font-weight: normal;
       }
     }
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .channel-selection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 }
 </style> 

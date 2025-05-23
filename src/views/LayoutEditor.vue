@@ -114,73 +114,13 @@
       </div>
                       </div>
 
-    <!-- 组件选择对话框 -->
-    <el-dialog
-      title="选择栏目样式"
+    <!-- 使用新的组件选择器 -->
+    <widget-selector
       :visible.sync="widgetDialogVisible"
-      width="80%"
-      :before-close="handleCloseWidgetDialog">
-      <div class="widget-selection">
-        <el-tabs v-model="activeWidgetCategory" type="card">
-          <el-tab-pane 
-            v-for="category in widgetCategories" 
-            :key="category" 
-            :label="category" 
-            :name="category">
-            
-            <el-row :gutter="20">
-              <!-- 导航栏组件需要占用完整一行 -->
-              <el-col 
-                v-for="widget in getWidgetsByCategory(category)" 
-                :key="widget.id"
-                :span="category === '导航栏' ? 24 : 12">
-                
-                <div class="widget-container">
-                  <div class="widget-header">
-                    <h4>{{ widget.name }}</h4>
-                    <el-button 
-                      v-if="selectedWidgetId === widget.id"
-                      type="primary" 
-                      size="mini" 
-                      icon="el-icon-setting"
-                      @click="showWidgetSettings(widget)">设置</el-button>
-                  </div>
-                  <el-card 
-                    class="widget-card" 
-                    :class="{ 'is-selected': selectedWidgetId === widget.id }"
-                    @click.native="selectWidget(widget)">
-                    <div class="preview-area">
-                      <component 
-                        :is="getWidgetComponent(widget.type)"
-                        :config="widget.config"
-                        class="preview-component" />
-                    </div>
-                  </el-card>
-                  <div class="widget-description">
-                    <p>{{ widget.description }}</p>
-                  </div>
-                </div>
-              </el-col>
-            </el-row>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-      <div slot="footer" class="dialog-footer">
-        <div class="channel-selection" v-if="selectedWidgetId">
-          <span>关联栏目：</span>
-          <el-select v-model="selectedChannelId" placeholder="请选择栏目">
-            <el-option
-              v-for="channel in channels"
-              :key="channel.id"
-              :label="channel.name"
-              :value="channel.id">
-            </el-option>
-          </el-select>
-        </div>
-        <el-button @click="handleCloseWidgetDialog">取消</el-button>
-        <el-button type="primary" @click="confirmWidgetSelection" :disabled="!selectedWidgetId">确定</el-button>
-      </div>
-    </el-dialog>
+      :nodeId="selectedNodeId"
+      @confirm="handleWidgetConfirm"
+      @close="handleCloseWidgetDialog"
+    />
 
     <!-- 组件设置对话框 -->
     <!-- 每个组件将负责实现自己的配置对话框 -->
@@ -367,6 +307,7 @@ import { v4 as uuidv4 } from 'uuid';
 import LayoutPreview from '@/components/preview/LayoutPreview.vue';
 import LayoutUtils from '@/utils/layout-utils';
 import Vue from 'vue';
+import WidgetSelector from '@/views/WidgetSelector.vue';
 
 // 布局节点组件
 const LayoutNode = Vue.component('layout-node', {
@@ -889,7 +830,8 @@ export default {
   name: 'LayoutEditor',
   components: {
     LayoutNode,
-    LayoutPreview
+    LayoutPreview,
+    WidgetSelector
   },
   data() {
     return {
@@ -897,10 +839,6 @@ export default {
       saving: false,
       widgetDialogVisible: false,
       selectedNodeId: null,
-      selectedWidgetId: null,
-      selectedWidget: null,
-      selectedChannelId: null,
-      activeWidgetCategory: '轮播图', // 默认激活的组件分类
       layoutPropsDialogVisible: false,
       newLayoutType: 'row',
       newLayoutParentId: null,
@@ -939,45 +877,6 @@ export default {
     // 获取所有widgets
     widgets() {
       return WidgetRegistry.getDefaultWidgets();
-    },
-    
-    // 按类型分组的组件
-    groupedWidgets() {
-      const groups = {};
-      
-      // 轮播图组件
-      const carouselWidgets = this.widgets.filter(w => w.type.startsWith('carousel-'));
-      if (carouselWidgets.length) {
-        groups['轮播图'] = carouselWidgets;
-      }
-      
-      // 新闻列表组件
-      const newsListWidgets = this.widgets.filter(w => w.type.startsWith('news-list'));
-      if (newsListWidgets.length) {
-        groups['新闻列表'] = newsListWidgets;
-      }
-      
-      // 图片新闻组件
-      const imageNewsWidgets = this.widgets.filter(w => w.type === 'image-news');
-      if (imageNewsWidgets.length) {
-        groups['图片新闻'] = imageNewsWidgets;
-      }
-      
-      // 其他组件
-      const otherTypes = ['carousel-', 'news-list', 'image-news'];
-      const otherWidgets = this.widgets.filter(w => 
-        !otherTypes.some(type => w.type === type || w.type.startsWith(type))
-      );
-      if (otherWidgets.length) {
-        groups['其他组件'] = otherWidgets;
-      }
-      
-      return groups;
-    },
-    
-    // 组件分类列表
-    widgetCategories() {
-      return WidgetRegistry.getCategories();
     }
   },
   methods: {
@@ -1070,107 +969,22 @@ export default {
     // 处理节点选择组件
     handleSelectWidget(nodeId) {
       this.selectedNodeId = nodeId;
-      this.selectedWidgetId = null;
-      this.selectedChannelId = null;
       this.widgetDialogVisible = true;
-    },
-    
-    // 处理行移动
-    handleMoveRow(data) {
-      const { id, direction } = data;
-      
-      // 找到行节点及其父节点
-      const findNodeWithParent = (nodeId, tree, parent = null) => {
-        if (!tree) return { node: null, parent: null };
-        
-        if (tree.id === nodeId) {
-          return { node: tree, parent };
-        }
-        
-        if (tree.children && tree.children.length > 0) {
-          for (const child of tree.children) {
-            const result = findNodeWithParent(child.id, child, tree);
-            if (result.node) {
-              return result;
-            }
-          }
-        }
-        
-        return { node: null, parent: null };
-      };
-      
-      const { node, parent } = findNodeWithParent(id, this.rootNode);
-      
-      if (!node || !parent || node.type !== 'row') {
-        this.$message.warning('无法移动：找不到行节点或父节点');
-        return;
-      }
-      
-      // 找到节点在父节点children中的索引
-      const index = parent.children.findIndex(child => child.id === id);
-      if (index === -1) {
-        this.$message.warning('无法移动：节点不在父节点的子节点列表中');
-        return;
-      }
-      
-      // 计算目标索引
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      
-      // 检查边界
-      if (targetIndex < 0 || targetIndex >= parent.children.length) {
-        this.$message.warning(`已经在${direction === 'up' ? '最顶部' : '最底部'}，无法继续${direction === 'up' ? '上移' : '下移'}`);
-        return;
-      }
-      
-      // 交换位置
-      const temp = parent.children[index];
-      parent.children[index] = parent.children[targetIndex];
-      parent.children[targetIndex] = temp;
-      
-      // 创建新的根节点引用来触发完整更新
-      const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
-      
-      // 更新本地状态
-      this.rootNode = null; // 先设为null强制刷新
-      this.$nextTick(() => {
-        this.rootNode = newRootNode;
-        
-        // 保存修改后的布局
-        this.saveLayoutTree(this.rootNode);
-        this.$message.success(`行已${direction === 'up' ? '上移' : '下移'}`);
-      });
     },
     
     // 关闭组件选择对话框
     handleCloseWidgetDialog() {
       this.widgetDialogVisible = false;
-      this.selectedWidgetId = null;
-      this.selectedChannelId = null;
+      this.selectedNodeId = null;
     },
     
-    // 选择组件
-    selectWidget(widget) {
-      this.selectedWidgetId = widget.id;
-    },
-    
-    // 确认组件选择
-    confirmWidgetSelection() {
-      if (!this.selectedNodeId || !this.selectedWidgetId) {
-        return;
-      }
-      
-      // 先关闭对话框，避免UI阻塞
-      this.widgetDialogVisible = false;
+    // 处理组件选择确认
+    handleWidgetConfirm(data) {
+      const { nodeId, widget, channelId } = data;
       
       // 使用Vue.set确保响应式更新
-      const node = this.findNodeById(this.rootNode, this.selectedNodeId);
+      const node = this.findNodeById(this.rootNode, nodeId);
       if (node) {
-        const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
-        if (!widget) {
-          this.$message.error('选择的组件无效');
-          return;
-        }
-        
         // 验证组件类型是否可用
         const component = WidgetRegistry.get(widget.type);
         if (!component) {
@@ -1178,7 +992,7 @@ export default {
           return;
         }
         
-        const channel = this.channels.find(c => c.id === this.selectedChannelId);
+        const channel = this.channels.find(c => c.id === channelId);
         
         // 深拷贝组件对象
         const widgetCopy = JSON.parse(JSON.stringify(widget));
@@ -1193,7 +1007,7 @@ export default {
         
         // 使用Vue的响应式更新机制
         this.$set(node, 'widget', widgetCopy);
-        this.$set(node, 'channelId', this.selectedChannelId);
+        this.$set(node, 'channelId', channelId);
         this.$set(node, 'channelName', channel ? channel.name : '');
         this.$set(node, 'hasWidget', true);  // 明确标记有组件
         
@@ -2010,9 +1824,79 @@ export default {
       this.$message.success(`已添加${rowCount}行布局`);
     },
     
-    // 根据分类获取组件
-    getWidgetsByCategory(category) {
-      return this.widgets.filter(widget => widget.category === category);
+    // 处理组件配置更新
+    handleWidgetConfigUpdate(widgetId, newConfig) {
+      // 找到当前选中的组件并更新配置
+      const widget = this.widgets.find(w => w.id === widgetId);
+      if (widget) {
+        widget.config = { ...newConfig };
+      }
+    },
+    
+    // 处理行移动
+    handleMoveRow(data) {
+      const { id, direction } = data;
+      
+      // 找到行节点及其父节点
+      const findNodeWithParent = (nodeId, tree, parent = null) => {
+        if (!tree) return { node: null, parent: null };
+        
+        if (tree.id === nodeId) {
+          return { node: tree, parent };
+        }
+        
+        if (tree.children && tree.children.length > 0) {
+          for (const child of tree.children) {
+            const result = findNodeWithParent(child.id, child, tree);
+            if (result.node) {
+              return result;
+            }
+          }
+        }
+        
+        return { node: null, parent: null };
+      };
+      
+      const { node, parent } = findNodeWithParent(id, this.rootNode);
+      
+      if (!node || !parent || node.type !== 'row') {
+        this.$message.warning('无法移动：找不到行节点或父节点');
+        return;
+      }
+      
+      // 找到节点在父节点children中的索引
+      const index = parent.children.findIndex(child => child.id === id);
+      if (index === -1) {
+        this.$message.warning('无法移动：节点不在父节点的子节点列表中');
+        return;
+      }
+      
+      // 计算目标索引
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      // 检查边界
+      if (targetIndex < 0 || targetIndex >= parent.children.length) {
+        this.$message.warning(`已经在${direction === 'up' ? '最顶部' : '最底部'}，无法继续${direction === 'up' ? '上移' : '下移'}`);
+        return;
+      }
+      
+      // 交换位置
+      const temp = parent.children[index];
+      parent.children[index] = parent.children[targetIndex];
+      parent.children[targetIndex] = temp;
+      
+      // 创建新的根节点引用来触发完整更新
+      const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
+      
+      // 更新本地状态
+      this.rootNode = null; // 先设为null强制刷新
+      this.$nextTick(() => {
+        this.rootNode = newRootNode;
+        
+        // 保存修改后的布局
+        this.saveLayoutTree(this.rootNode);
+        this.$message.success(`行已${direction === 'up' ? '上移' : '下移'}`);
+      });
     },
     
     // 显示组件设置对话框
@@ -2020,15 +1904,6 @@ export default {
       // 每个组件将负责实现自己的配置对话框
       // 通过事件总线触发组件配置事件
       this.$root.$emit('widget-config-requested', widget);
-    },
-    
-    // 处理组件配置更新
-    handleWidgetConfigUpdate(newConfig) {
-      // 找到当前选中的组件并更新配置
-      const widget = this.widgets.find(w => w.id === this.selectedWidgetId);
-      if (widget) {
-        widget.config = { ...newConfig };
-      }
     }
   },
   watch: {
