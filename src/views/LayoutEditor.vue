@@ -36,7 +36,6 @@
         <!-- 布局树结构显示 -->
         <template v-else>
           <div class="layout-root">
-            <h3 class="layout-title">布局结构</h3>
             <div class="layout-container">
               <!-- 使用v-for遍历根节点下的所有布局 -->
               <div v-for="node in rootNode.children" :key="node.id">
@@ -381,7 +380,7 @@ export default {
         const success = await LayoutUtils.exportLayoutToFile(this.rootNode);
         
         if (success) {
-          this.$message.success('布局配置已导出');
+        this.$message.success('布局配置已导出');
         } else {
           this.$message.error('导出失败');
         }
@@ -848,16 +847,8 @@ export default {
     border-radius: 8px;
     padding: 24px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-    
-    .layout-title {
-      margin: 0 0 24px 0;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #ebeef5;
-      font-size: 18px;
-      color: #303133;
-  }
 
-  .layout-container {
+    .layout-container {
       .add-layout-controls {
         margin-top: 24px;
         padding: 24px;
