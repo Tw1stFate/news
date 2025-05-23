@@ -1,13 +1,12 @@
 <template>
   <div class="widget-selector">
-    <el-header height="60px" class="selector-header">
+    <div class="selector-header">
       <div class="header-controls">
         <h2>选择栏目样式</h2>
       </div>
-    </el-header>
+    </div>
 
     <div class="selector-content">
-      <!-- 分组选项卡 -->
       <el-tabs v-model="activeGroup" type="card" @tab-click="handleTabClick">
         <el-tab-pane 
           v-for="group in widgetGroups" 
@@ -17,21 +16,19 @@
         </el-tab-pane>
       </el-tabs>
 
-      <!-- 当前分组的组件列表 -->
       <div class="widget-list">
         <el-row :gutter="20">
-          <el-col :span="12" v-for="widget in currentGroupWidgets" :key="widget.id">
+          <el-col v-for="widget in currentGroupWidgets" :key="widget.id" :span="12">
             <el-card 
               class="widget-card" 
               :class="{ 'is-selected': selectedWidgetId === widget.id }"
               @click.native="selectWidget(widget)">
               <div class="widget-preview">
-                <div class="widget-overlay" v-show="hoveredWidgetId === widget.id">
+                <div v-if="hoveredWidgetId === widget.id" class="widget-overlay">
                   <el-button 
                     type="primary" 
                     icon="el-icon-setting" 
-                    circle
-                    @click.stop="openWidgetSettings(widget)">
+                    circle>
                   </el-button>
                 </div>
                 <component 
@@ -49,25 +46,6 @@
         </el-row>
       </div>
     </div>
-
-    <!-- 组件设置对话框 -->
-    <el-dialog
-      :title="`${selectedWidget ? selectedWidget.name : '组件'}设置`"
-      :visible.sync="settingsDialogVisible"
-      width="50%"
-      :before-close="handleCloseSettingsDialog">
-      <widget-settings
-        v-if="selectedWidget"
-        :widget="selectedWidget"
-        :channels="channels"
-        @save="handleSaveSettings"
-        @cancel="handleCloseSettingsDialog">
-      </widget-settings>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="handleCloseSettingsDialog">取消</el-button>
-        <el-button type="primary" @click="applyWidgetSettings">应用</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
@@ -77,23 +55,20 @@ import WidgetRegistry from '@/services/widget-registry';
 
 export default {
   name: 'WidgetSelector',
-  components: {
-    // 假设我们会创建一个通用的组件设置组件
-    WidgetSettings: () => import('@/components/WidgetSettings.vue')
-  },
   data() {
     return {
       activeGroup: '',
       hoveredWidgetId: null,
-      selectedWidgetId: null,
-      settingsDialogVisible: false,
-      tempWidgetConfig: null,
-      selectedWidget: null
+      selectedWidgetId: null
     }
   },
   computed: {
-    ...mapState('widget', ['widgets']),
     ...mapState('channel', ['channels']),
+    
+    // 获取所有widgets
+    widgets() {
+      return WidgetRegistry.getDefaultWidgets();
+    },
     
     widgetGroups() {
       return WidgetRegistry.getGroups();
@@ -105,16 +80,15 @@ export default {
     }
   },
   created() {
-    // 加载预设的栏目样式数据
-    this.loadWidgets();
+    // 加载栏目数据
+    this.loadChannels();
     // 默认选中第一个分组
     if (this.widgetGroups.length > 0) {
       this.activeGroup = this.widgetGroups[0];
     }
   },
   methods: {
-    async loadWidgets() {
-      await this.$store.dispatch('widget/fetchWidgets');
+    async loadChannels() {
       await this.$store.dispatch('channel/fetchChannels');
     },
     
@@ -129,49 +103,6 @@ export default {
     selectWidget(widget) {
       this.selectedWidgetId = widget.id;
       this.$emit('select', widget);
-    },
-    
-    openWidgetSettings(widget) {
-      this.selectedWidget = JSON.parse(JSON.stringify(widget)); // 深拷贝
-      this.tempWidgetConfig = JSON.parse(JSON.stringify(widget.config));
-      this.settingsDialogVisible = true;
-    },
-    
-    handleCloseSettingsDialog() {
-      this.settingsDialogVisible = false;
-      this.selectedWidget = null;
-      this.tempWidgetConfig = null;
-    },
-    
-    handleSaveSettings(updatedConfig) {
-      if (this.selectedWidget) {
-        this.tempWidgetConfig = updatedConfig;
-      }
-    },
-    
-    applyWidgetSettings() {
-      if (this.selectedWidget && this.tempWidgetConfig) {
-        // 找到原始组件并更新配置
-        const originalWidget = this.widgets.find(w => w.id === this.selectedWidget.id);
-        if (originalWidget) {
-          // 更新组件配置
-          this.$store.dispatch('widget/updateWidgetConfig', {
-            widgetId: this.selectedWidget.id,
-            config: this.tempWidgetConfig
-          });
-          
-          // 如果当前选中的就是被修改的组件，更新选中状态
-          if (this.selectedWidgetId === this.selectedWidget.id) {
-            this.$emit('select', {
-              ...originalWidget,
-              config: this.tempWidgetConfig
-            });
-          }
-          
-          this.$message.success('组件设置已应用');
-        }
-      }
-      this.handleCloseSettingsDialog();
     }
   }
 };

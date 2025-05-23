@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import LayoutEditor from '@/views/LayoutEditor.vue';
-import WidgetManager from '@/views/WidgetManager.vue';
 
 Vue.use(VueRouter);
 
@@ -18,14 +17,6 @@ const routes = [
       title: '新闻门户布局编辑器'
     }
   },
-  {
-    path: '/widgets',
-    name: 'WidgetManager',
-    component: WidgetManager,
-    meta: {
-      title: '栏目样式管理'
-    }
-  }
 ];
 
 const router = new VueRouter({

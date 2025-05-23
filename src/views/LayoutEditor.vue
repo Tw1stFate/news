@@ -933,9 +933,13 @@ export default {
     };
   },
   computed: {
-    ...mapState('widget', ['widgets']),
     ...mapState('channel', ['channels']),
     ...mapState('layout', ['layoutTree']),
+    
+    // 获取所有widgets
+    widgets() {
+      return WidgetRegistry.getDefaultWidgets();
+    },
     
     // 按类型分组的组件
     groupedWidgets() {
@@ -959,14 +963,8 @@ export default {
         groups['图片新闻'] = imageNewsWidgets;
       }
       
-      // 排行榜组件
-      const hotNewsWidgets = this.widgets.filter(w => w.type === 'hot-news');
-      if (hotNewsWidgets.length) {
-        groups['排行榜'] = hotNewsWidgets;
-      }
-      
       // 其他组件
-      const otherTypes = ['carousel-', 'news-list', 'image-news', 'hot-news'];
+      const otherTypes = ['carousel-', 'news-list', 'image-news'];
       const otherWidgets = this.widgets.filter(w => 
         !otherTypes.some(type => w.type === type || w.type.startsWith(type))
       );
@@ -983,7 +981,6 @@ export default {
     }
   },
   methods: {
-    ...mapActions('widget', ['fetchWidgets']),
     ...mapActions('channel', ['fetchChannels', 'fetchCategories']),
     ...mapActions('layout', ['saveLayoutTree', 'loadLayoutTree']),
     
@@ -2072,8 +2069,7 @@ export default {
     }
   },
   created() {
-    // 加载组件和栏目数据
-    this.fetchWidgets();
+    // 加载栏目数据
     this.fetchChannels();
     this.fetchCategories();
     

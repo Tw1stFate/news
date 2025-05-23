@@ -15,10 +15,6 @@
               <i class="el-icon-s-grid"></i>
               布局编辑器
             </el-menu-item>
-            <el-menu-item index="/widgets">
-              <i class="el-icon-s-operation"></i>
-              栏目样式管理
-            </el-menu-item>
           </el-menu>
         </div>
       </el-header>

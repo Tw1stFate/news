@@ -2,13 +2,10 @@
 import CarouselWidget1 from '@/components/widgets/CarouselWidget1.vue';
 import CarouselWidget2 from '@/components/widgets/CarouselWidget2.vue';
 import CarouselWidget3 from '@/components/widgets/CarouselWidget3.vue';
-import HeadlineWidget from '@/components/widgets/HeadlineWidget.vue';
-import NewsListWidget from '@/components/widgets/NewsListWidget.vue';
 import NewsListWidget1 from '@/components/widgets/NewsListWidget1.vue';
 import NewsListWidget2 from '@/components/widgets/NewsListWidget2.vue';
 import NewsListWidget3 from '@/components/widgets/NewsListWidget3.vue';
 import ImageNewsWidget from '@/components/widgets/ImageNewsWidget.vue';
-import HotNewsWidget from '@/components/widgets/HotNewsWidget.vue';
 import NavBarWidget from '@/components/widgets/NavBarWidget.vue';
 
 // mock 数据
@@ -124,28 +121,6 @@ const widgetTypes = {
       maxItems: 5              // 最大加载数量
     }
   },
-  headline: {
-    name: '头条新闻',
-    icon: 'el-icon-news',
-    component: HeadlineWidget,
-    defaultConfig: {
-      titleStyle: 'large',
-      categoryId: 'headlines', // 关联栏目ID
-      maxItems: 1              // 仅显示一条
-    }
-  },
-  'news-list': {
-    name: '新闻列表',
-    icon: 'el-icon-document',
-    component: NewsListWidget,
-    defaultConfig: {
-      titleStyle: 'medium',
-      count: 10,
-      showImage: true,
-      categoryId: 'general',   // 关联栏目ID
-      maxItems: 10             // 最大加载数量
-    }
-  },
   'news-list-1': {
     name: '列表样式1',
     icon: 'el-icon-document',
@@ -184,32 +159,6 @@ const widgetTypes = {
       maxItems: 4              // 最大加载数量
     }
   },
-  'news-list-4': {
-    name: '列表样式4',
-    icon: 'el-icon-document',
-    component: NewsListWidget,
-    defaultConfig: {
-      height: 400,
-      titleStyle: 'medium',
-      count: 10,
-      showImage: true,
-      categoryId: 'technology', // 关联栏目ID
-      maxItems: 10              // 最大加载数量
-    }
-  },
-  'news-list-5': {
-    name: '列表样式5',
-    icon: 'el-icon-document',
-    component: NewsListWidget,
-    defaultConfig: {
-      height: 360,
-      titleStyle: 'medium',
-      count: 8,
-      showImage: false,
-      categoryId: 'international', // 关联栏目ID
-      maxItems: 8                  // 最大加载数量
-    }
-  },
   'image-news': {
     name: '图片新闻',
     icon: 'el-icon-picture-outline',
@@ -219,18 +168,6 @@ const widgetTypes = {
       count: 6,
       categoryId: 'lifestyle',  // 关联栏目ID
       maxItems: 6               // 最大加载数量
-    }
-  },
-  'hot-news': {
-    name: '热点排行',
-    icon: 'el-icon-trophy',
-    component: HotNewsWidget,
-    defaultConfig: {
-      count: 10,
-      showNumber: true,
-      period: 'day',           // 时间周期：day, week, month
-      categoryId: 'hot',       // 关联栏目ID
-      maxItems: 10             // 最大加载数量
     }
   },
   'nav-bar': {
@@ -346,36 +283,6 @@ const defaultWidgets = [
     }
   },
   {
-    id: 'news-list-4',
-    name: '列表样式4',
-    type: 'news-list',
-    description: '图文混排列表',
-    category: '新闻列表',
-    config: {
-      height: 400,
-      titleStyle: 'medium',
-      count: 10,
-      showImage: true,
-      categoryId: 'technology',
-      maxItems: 10
-    }
-  },
-  {
-    id: 'news-list-5',
-    name: '列表样式5',
-    type: 'news-list',
-    description: '纯文字列表',
-    category: '新闻列表',
-    config: {
-      height: 360,
-      titleStyle: 'medium',
-      count: 8,
-      showImage: false,
-      categoryId: 'international',
-      maxItems: 8
-    }
-  },
-  {
     id: 'image-news-1',
     name: '图片样式1',
     type: 'image-news',
@@ -401,21 +308,6 @@ const defaultWidgets = [
       count: 6,
       categoryId: 'culture',
       maxItems: 6
-    }
-  },
-  {
-    id: 'hot-news-1',
-    name: '排行样式1',
-    type: 'hot-news',
-    description: '带序号排行',
-    category: '排行榜',
-    config: {
-      height: 360,
-      count: 10,
-      showNumber: true,
-      period: 'day',
-      categoryId: 'hot',
-      maxItems: 10
     }
   },
   {
