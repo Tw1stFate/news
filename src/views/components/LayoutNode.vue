@@ -296,7 +296,18 @@ export default {
       
       // 如果组件实例存在并且有showSettingDialog方法，直接调用
       if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
-        widgetComponent.showSettingDialog();
+        // 传递回调函数用于接收配置更新
+        widgetComponent.showSettingDialog((newConfig) => {
+          // 获取当前节点
+          const node = this.node;
+          if (node && node.widget) {
+            // 更新组件配置
+            node.widget.config = {...newConfig};
+            
+            // 触发布局更新
+            this.$root.$emit('layout-updated');
+          }
+        });
       }
     },
     moveRowUp() {

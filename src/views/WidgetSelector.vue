@@ -119,7 +119,19 @@ export default {
       
       // Use the component's showSettingDialog method
       if (widgetComponent && typeof widgetComponent.showSettingDialog === 'function') {
-        widgetComponent.showSettingDialog();
+        widgetComponent.showSettingDialog((newConfig) => {
+          // 当组件配置更新时，将其同步到选中的组件
+          const categoryWidgets = this.getWidgetsByCategory(this.activeWidgetCategory);
+          const selectedWidget = categoryWidgets[this.selectedWidgetIndex];
+          
+          if (selectedWidget) {
+            // 更新配置
+            selectedWidget.config = { ...newConfig };
+            
+            // 更新后自动确认组件选择
+            this.confirmSelection();
+          }
+        });
       }
     },
     
@@ -147,11 +159,14 @@ export default {
       const node = this.findNode();
       const channelId = node && node.channelId ? node.channelId : null;
       
+      // 使用深拷贝确保组件配置不会被后续修改影响
+      const widgetCopy = JSON.parse(JSON.stringify(widget));
+      
       this.$emit('confirm', {
         nodeId: this.nodeId,
         widgetType: this.selectedWidgetType,
         channelId,
-        widget
+        widget: widgetCopy
       });
       
       this.reset();

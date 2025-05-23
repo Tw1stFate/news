@@ -115,7 +115,8 @@ export default {
       loading: true,
       items: [],
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
+      configCallback: null
     }
   },
   computed: {
@@ -165,23 +166,34 @@ export default {
       this.$refs.carousel.setActiveItem(index);
     },
     // 显示设置对话框的方法
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      // 保存回调函数
+      this.configCallback = callback;
+      
       // 复制当前配置到临时配置对象
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
+      
       // 显示配置对话框
       this.configDialogVisible = true;
     },
     // 保存配置
     saveConfig() {
-      // 触发配置更新事件
-      this.$root.$emit('widget-config-updated', 'carousel-1', this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === 'function') {
+        this.configCallback(this.tempConfig);
+      }
+      
+      // 更新本地配置
+      this.config = JSON.parse(JSON.stringify(this.tempConfig));
+      
       // 关闭对话框
       this.configDialogVisible = false;
     },
     // 对话框关闭处理
     handleDialogClosed() {
-      // 清空临时配置
+      // 清空临时配置和回调
       this.tempConfig = {};
+      this.configCallback = null;
     }
   },
 };

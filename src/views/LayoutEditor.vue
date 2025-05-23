@@ -164,21 +164,10 @@ export default {
       // 保存布局树
       this.saveLayoutTree(this.rootNode);
     });
-    
-    // 监听组件配置更新事件
-    this.$root.$on('widget-config-updated', (widgetId, newConfig) => {
-      // 找到当前选中的组件并更新配置
-      const widget = this.widgets.find(w => w.id === widgetId);
-      if (widget) {
-        widget.config = { ...newConfig };
-      }
-    });
   },
   beforeDestroy() {
     // 移除布局更新事件监听
     this.$root.$off('layout-updated');
-    // 移除组件配置更新事件监听
-    this.$root.$off('widget-config-updated');
   },
   methods: {
     ...mapActions('channel', ['fetchChannels', 'fetchCategories']),

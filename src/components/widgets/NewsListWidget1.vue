@@ -94,7 +94,8 @@ export default {
       total: 0,
       currentPage: 1,
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
+      configCallback: null
     };
   },
   computed: {
@@ -152,16 +153,24 @@ export default {
     handleMoreClick() {
       this.$emit('more-click', this.config.categoryId || 'domestic');
     },
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.configDialogVisible = false;
+      this.configCallback = null;
     },
     saveConfig() {
-      // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', 'news-list-1', this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === 'function') {
+        this.configCallback(this.tempConfig);
+      }
+      
+      // 更新本地配置
+      this.config = JSON.parse(JSON.stringify(this.tempConfig));
+      
       this.configDialogVisible = false;
     }
   }
