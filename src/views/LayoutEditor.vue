@@ -43,8 +43,6 @@
                 <layout-node 
                   :node="node" 
                   :depth="0"
-                  @add-row="handleAddRow"
-                  @add-column="handleAddColumn"
                   @delete-node="handleDeleteNode"
                   @select-widget="handleSelectWidget"
                   @move-row="handleMoveRow" />
@@ -70,13 +68,6 @@
       @confirm="handleWidgetConfirm"
       @close="handleCloseWidgetDialog" />
 
-    <!-- 布局属性设置对话框 -->
-    <layout-props-dialog
-      :visible.sync="layoutPropsDialogVisible"
-      :layout-type="newLayoutType"
-      :parent-id="newLayoutParentId"
-      @confirm="confirmAddLayout" />
-
     <!-- 布局预览对话框 -->
     <preview-dialog
       :visible.sync="previewDialogVisible"
@@ -97,7 +88,6 @@ import { v4 as uuidv4 } from 'uuid';
 import LayoutUtils from '@/utils/layout-utils';
 import LayoutNode from '@/views/components/LayoutNode.vue';
 import WidgetSelector from '@/views/WidgetSelector.vue';
-import LayoutPropsDialog from '@/views/components/LayoutPropsDialog.vue';
 import PreviewDialog from '@/views/components/PreviewDialog.vue';
 import ImportDialog from '@/views/components/ImportDialog.vue';
 import QuickLayoutForm from '@/views/components/QuickLayoutForm.vue';
@@ -109,7 +99,6 @@ export default {
     LayoutNode,
     LayoutPreview,
     WidgetSelector,
-    LayoutPropsDialog,
     PreviewDialog,
     ImportDialog,
     QuickLayoutForm
@@ -120,13 +109,6 @@ export default {
       saving: false,
       widgetDialogVisible: false,
       selectedNodeId: null,
-      layoutPropsDialogVisible: false,
-      newLayoutType: 'row',
-      newLayoutParentId: null,
-      newLayoutProps: {
-        ratios: '',
-        height: ''
-      },
       previewDialogVisible: false,
       previewLayoutTree: null,
       importDialogVisible: false,
@@ -227,16 +209,6 @@ export default {
       
       // 保存到vuex
       this.saveLayoutTree(this.rootNode);
-    },
-    
-    // 添加行节点到指定父节点
-    handleAddRow(parentId) {
-      this.showLayoutPropsDialog('row', parentId);
-    },
-    
-    // 添加列节点到指定父节点
-    handleAddColumn(parentId) {
-      this.showLayoutPropsDialog('column', parentId);
     },
     
     // 删除节点
@@ -409,7 +381,7 @@ export default {
         const success = await LayoutUtils.exportLayoutToFile(this.rootNode);
         
         if (success) {
-        this.$message.success('布局配置已导出');
+          this.$message.success('布局配置已导出');
         } else {
           this.$message.error('导出失败');
         }
@@ -557,121 +529,6 @@ export default {
       if (node.children && node.children.length > 0) {
         node.children.forEach(child => this.repairImportedLayout(child));
       }
-    },
-    
-    // 显示布局属性设置对话框
-    showLayoutPropsDialog(layoutType, parentId) {
-      this.layoutPropsDialogVisible = true;
-      this.newLayoutType = layoutType;
-      this.newLayoutParentId = parentId;
-    },
-    
-    // 确认添加布局
-    confirmAddLayout(data) {
-      const { layoutType, parentId, props } = data;
-      const { ratios, height } = props;
-      
-      if (parentId === null) {
-        // 添加到根节点
-        // 创建行布局
-        this.rootNode.children.push({
-          id: uuidv4(),
-          type: 'row',
-          height,
-          width: '100%', // 确保宽度占满
-          parent: this.rootNode.id,
-          children: []
-        });
-      } else if (layoutType === 'row') {
-        // 只在根节点下添加行布局，实现平铺的二维结构
-        const parent = this.findNodeById(this.rootNode, parentId);
-        if (parent && parent.id === this.rootNode.id) {
-          if (!parent.children) {
-            parent.children = [];
-          }
-          
-          // 检查是否设置了比例
-          if (ratios && ratios.includes(':')) {
-            // 解析行布局比例
-            const ratioArray = ratios.split(':').map(r => parseInt(r.trim()));
-            const totalRatio = ratioArray.reduce((sum, r) => sum + r, 0);
-            
-            // 创建多行
-            for (let i = 0; i < ratioArray.length; i++) {
-              const ratio = ratioArray[i];
-              parent.children.push({
-                id: uuidv4(),
-                type: 'row',
-                height: height || '', // 如果设置了高度则使用，否则为空
-                width: '100%', // 确保宽度占满
-                flexRatio: Math.round((ratio / totalRatio) * 10), // 存储flex比例用于垂直分配
-                parent: parentId,
-                children: []
-              });
-            }
-          } else {
-            // 无比例，添加单行
-            parent.children.push({
-              id: uuidv4(),
-              type: 'row',
-              height,
-              width: '100%', // 确保宽度占满
-              parent: parentId,
-              children: []
-            });
-          }
-        }
-      } else if (layoutType === 'column') {
-        // 添加列布局，只能在行内添加列
-        const parent = this.findNodeById(this.rootNode, parentId);
-        if (parent && parent.type === 'row') {
-          if (!parent.children) {
-            parent.children = [];
-          }
-          
-          // 确保有比例设置
-          if (ratios && ratios.includes(':')) {
-            // 解析列布局比例
-            const ratioArray = ratios.split(':').map(r => parseInt(r.trim()) || 1); // 默认使用1，防止无效输入
-            const totalRatio = ratioArray.reduce((sum, r) => sum + r, 0);
-            
-            // 创建多列
-            for (let i = 0; i < ratioArray.length; i++) {
-              const ratio = ratioArray[i];
-              // 计算百分比比例，然后转换为0-10的span值
-              // 例如: 1:1:1 => 33.33% => span约为3.33，四舍五入为3
-              const percent = (ratio / totalRatio) * 100;
-              const span = Math.round((ratio / totalRatio) * 10);
-              
-              parent.children.push({
-                id: uuidv4(),
-                type: 'column',
-                span, // 宽度比例
-                percentWidth: `${percent.toFixed(2)}%`, // 存储精确的百分比，便于展示
-                height: height || '100%', // 如果未设置高度，则占满父容器高度
-                parent: parentId,
-                children: []
-              });
-            }
-            
-            // 校正span总和为10
-            this.adjustColumnSpans(parent.children);
-          } else {
-            // 无比例设置，默认添加一个全宽的列
-            parent.children.push({
-              id: uuidv4(),
-              type: 'column',
-              span: 10, // 满宽度
-              percentWidth: '100%',
-              height: height || '100%',
-              parent: parentId,
-              children: []
-            });
-          }
-        }
-      }
-      
-      this.saveLayoutTree(this.rootNode);
     },
 
     // 显示布局预览
