@@ -69,12 +69,14 @@
           <el-switch v-model="tempConfig.showTitle"></el-switch>
         </el-form-item>
         
-        <el-form-item label="内容分类">
-          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
-            <el-option label="头条新闻" value="headlines"></el-option>
-            <el-option label="热点要闻" value="trending"></el-option>
-            <el-option label="社会新闻" value="social"></el-option>
-            <el-option label="国际新闻" value="international"></el-option>
+        <el-form-item label="栏目选择">
+          <el-select v-model="tempConfig.columnId" placeholder="选择栏目">
+            <el-option
+              v-for="column in columns"
+              :key="column.id"
+              :label="column.name"
+              :value="column.id">
+            </el-option>
           </el-select>
         </el-form-item>
         
@@ -92,6 +94,7 @@
 
 <script>
 import api from '@/services/api';
+import { mapState } from 'vuex';
 
 export default {
   name: 'CarouselWidget1',
@@ -104,7 +107,7 @@ export default {
         autoplay: true,
         interval: 5000,
         showTitle: true,
-        categoryId: 'headlines',
+        columnId: '',
         maxItems: 5
       })
     }
@@ -120,6 +123,8 @@ export default {
     }
   },
   computed: {
+    ...mapState('column', ['columns']),
+    
     currentItem() {
       return this.items[this.currentIndex] || {};
     }
@@ -135,6 +140,12 @@ export default {
   },
   created() {
     console.log('=======CarouselWidget1 created');
+    
+    // 确保有栏目数据
+    if (this.columns.length === 0) {
+      this.$store.dispatch('column/fetchColumns');
+    }
+    
     this.fetchData();
   },
   beforeDestroy() {
@@ -145,8 +156,8 @@ export default {
       this.loading = true;
       try {
         // 从API获取轮播数据
-        this.items = await api.getNewsByCategory(
-          this.config.categoryId || 'headlines',
+        this.items = await api.getNewsByColumn(
+          this.config.columnId || 'headlines',
           this.config.maxItems || 5
         );
       } catch (error) {

@@ -1,6 +1,6 @@
-// 频道管理模块
+// 栏目管理模块
 const state = {
-  channels: [
+  columns: [
     { id: 'headlines', name: '头条新闻' },
     { id: 'domestic', name: '国内新闻' },
     { id: 'international', name: '国际新闻' },
@@ -26,8 +26,8 @@ const state = {
 };
 
 const mutations = {
-  SET_CHANNELS(state, channels) {
-    state.channels = channels;
+  SET_COLUMNS(state, columns) {
+    state.columns = columns;
   },
   SET_CATEGORIES(state, categories) {
     state.categories = categories;
@@ -35,11 +35,11 @@ const mutations = {
 };
 
 const actions = {
-  fetchChannels({ commit }) {
-    // 模拟从API获取频道信息
+  fetchColumns({ commit }) {
+    // 模拟从API获取栏目信息
     // 在实际应用中，这里会调用API获取真实数据
     // 现在我们直接使用默认数据
-    commit('SET_CHANNELS', state.channels);
+    commit('SET_COLUMNS', state.columns);
   },
   fetchCategories({ commit }) {
     // 模拟从API获取分类信息

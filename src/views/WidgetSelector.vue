@@ -83,7 +83,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('channel', ['channels']),
+    ...mapState('column', ['columns']),
     
     // 获取所有widgets
     widgets() {
@@ -157,7 +157,7 @@ export default {
       }
       
       const node = this.findNode();
-      const channelId = node && node.channelId ? node.channelId : null;
+      const columnId = node && node.columnId ? node.columnId : null;
       
       // 使用深拷贝确保组件配置不会被后续修改影响
       const widgetCopy = JSON.parse(JSON.stringify(widget));
@@ -165,7 +165,7 @@ export default {
       this.$emit('confirm', {
         nodeId: this.nodeId,
         widgetType: this.selectedWidgetType,
-        channelId,
+        columnId,
         widget: widgetCopy
       });
       

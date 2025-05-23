@@ -105,8 +105,7 @@
           <component 
             :is="getWidgetComponent(node.widget.type)" 
             :config="node.widget.config || {}" 
-            :channel-id="node.channelId"
-            :widget-id="node.widget.id"
+            :nodeId="node.id"
             ref="widgetComponent"
             class="preview-component">
           </component>

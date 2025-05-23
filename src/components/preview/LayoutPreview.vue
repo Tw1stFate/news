@@ -66,7 +66,7 @@ const PreviewNode = {
           h(widgetComponent, {
             props: {
               config: this.node.widget.config || {},
-              channelId: this.node.channelId || null
+              columnId: this.node.columnId || null
             },
             class: 'widget-component'
           })

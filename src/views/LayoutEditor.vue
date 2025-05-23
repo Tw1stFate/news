@@ -121,7 +121,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('channel', ['channels']),
+    ...mapState('column', ['columns']),
     ...mapState('layout', ['layoutTree']),
     
     // 获取所有widgets
@@ -148,7 +148,7 @@ export default {
   },
   created() {
     // 加载栏目数据
-    this.fetchChannels();
+    this.fetchColumns();
     this.fetchCategories();
     
     // 尝试从vuex加载已保存的布局
@@ -170,7 +170,7 @@ export default {
     this.$root.$off('layout-updated');
   },
   methods: {
-    ...mapActions('channel', ['fetchChannels', 'fetchCategories']),
+    ...mapActions('column', ['fetchColumns', 'fetchCategories']),
     ...mapActions('layout', ['saveLayoutTree', 'loadLayoutTree']),
     
     // 创建根节点
@@ -237,7 +237,7 @@ export default {
     
     // 处理组件选择确认
     handleWidgetConfirm(data) {
-      const { nodeId, widget, channelId } = data;
+      const { nodeId, widget, columnId } = data;
       
       // 使用Vue.set确保响应式更新
       const node = this.findNodeById(this.rootNode, nodeId);
@@ -249,7 +249,7 @@ export default {
           return;
         }
         
-        const channel = this.channels.find(c => c.id === channelId);
+        const column = this.columns.find(c => c.id === columnId);
         
         // 深拷贝组件对象
         const widgetCopy = JSON.parse(JSON.stringify(widget));
@@ -264,8 +264,8 @@ export default {
         
         // 使用Vue的响应式更新机制
         this.$set(node, 'widget', widgetCopy);
-        this.$set(node, 'channelId', channelId);
-        this.$set(node, 'channelName', channel ? channel.name : '');
+        this.$set(node, 'columnId', columnId);
+        this.$set(node, 'columnName', column ? column.name : '');
         this.$set(node, 'hasWidget', true);  // 明确标记有组件
         
         // 创建新的根节点引用来触发完整更新
@@ -422,7 +422,7 @@ export default {
         // 更新加载提示
         loadingInstance.text = '正在应用布局...';
         
-        // 确保所有节点的widget和channelId属性正确设置
+        // 确保所有节点的widget和columnId属性正确设置
         this.repairImportedLayout(layoutTree);
         
         // 使用nextTick和setTimeout确保UI完全更新
@@ -464,59 +464,47 @@ export default {
       }
     },
     
-    // 修复导入的布局树，确保所有节点的属性正确设置
-    repairImportedLayout(node) {
-      if (!node) return;
-      
-      // 对导入的布局进行处理，确保节点与现有组件和栏目匹配
-      if (node.widget) {
-        // 检查widget是否存在于当前系统
-        const existingWidget = this.widgets.find(w => 
-          w.type === node.widget.type || 
-          w.id === node.widget.id
-        );
-        
-        if (!existingWidget) {
-          // 组件不存在，清除widget属性
-          console.warn(`导入的布局包含未知组件类型: ${node.widget.type}，已清除`);
-          delete node.widget;
-          delete node.channelId;
-          delete node.channelName;
-          delete node.hasWidget;
-        } else {
-          // 确保widget引用最新的组件定义
-          node.widget = JSON.parse(JSON.stringify(existingWidget));
-          
-          // 检查关联的栏目是否存在
-          if (node.channelId) {
-            const existingChannel = this.channels.find(c => c.id === node.channelId);
-            if (!existingChannel) {
-              // 栏目不存在，清除channelId但保留组件
-              console.warn(`导入的布局关联了未知栏目ID: ${node.channelId}，已清除`);
-              delete node.channelId;
-              delete node.channelName;
-            } else {
-              // 更新栏目名称，确保与当前系统匹配
-              node.channelName = existingChannel.name;
+    // 修复导入的布局，确保组件和栏目引用正确
+    repairImportedLayout(layoutTree) {
+      const processNode = (node) => {
+        // 检查节点是否有组件
+        if (node.widget) {
+          const component = WidgetRegistry.get(node.widget.type);
+          if (!component) {
+            // 组件不存在，清除组件相关属性
+            console.warn(`导入的布局包含未知组件类型: ${node.widget.type}，已清除`);
+            delete node.widget;
+            delete node.columnId;
+            delete node.columnName;
+            delete node.hasWidget;
+          } else {
+            // 组件存在，确保hasWidget属性设置
+            node.hasWidget = true;
+            
+            // 检查关联的栏目是否存在
+            if (node.columnId) {
+              const existingColumn = this.columns.find(c => c.id === node.columnId);
+              if (!existingColumn) {
+                // 栏目不存在，清除columnId但保留组件
+                console.warn(`导入的布局关联了未知栏目ID: ${node.columnId}，已清除`);
+                delete node.columnId;
+                delete node.columnName;
+              } else {
+                // 更新栏目名称，确保与当前系统匹配
+                node.columnName = existingColumn.name;
+              }
             }
           }
-          
-          // 确保widget配置不包含items属性
-          if (node.widget.config && 'items' in node.widget.config) {
-            delete node.widget.config.items;
-          }
         }
         
-        // 确保设置了hasWidget标记
-        if (node.widget) {
-          node.hasWidget = true;
+        // 递归处理子节点
+        if (node.children && node.children.length > 0) {
+          node.children.forEach(child => processNode(child));
         }
-      }
+      };
       
-      // 递归处理子节点
-      if (node.children && node.children.length > 0) {
-        node.children.forEach(child => this.repairImportedLayout(child));
-      }
+      // 从根节点开始处理
+      processNode(layoutTree);
     },
 
     // 显示布局预览
