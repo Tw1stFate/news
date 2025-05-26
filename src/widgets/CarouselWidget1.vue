@@ -4,8 +4,8 @@
       <el-skeleton animated :rows="1" style="height: 100%" />
     </div>
     <template v-else-if="items && items.length > 0">
-      <el-carousel 
-        :interval="config.interval" 
+      <el-carousel
+        :interval="config.interval"
         :autoplay="config.autoplay"
         :height="`${config.height}px`"
         indicator-position="none"
@@ -14,7 +14,7 @@
       >
         <el-carousel-item v-for="item in items" :key="item.id">
           <div class="carousel-item">
-            <img :src="item.image" :alt="item.title" class="carousel-image">
+            <img :src="item.image" :alt="item.title" class="carousel-image" />
           </div>
         </el-carousel-item>
       </el-carousel>
@@ -38,50 +38,67 @@
         </div>
       </div>
     </template>
-    
+
     <div v-else class="empty-carousel">
       <el-empty description="暂无轮播数据"></el-empty>
     </div>
-    
+
     <!-- 组件配置对话框 -->
     <el-dialog
       title="轮播组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="轮播高度">
-          <el-input-number v-model="tempConfig.height" :min="150" :max="600" :step="10"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.height"
+            :min="150"
+            :max="600"
+            :step="10"
+          ></el-input-number>
           <span class="form-tip">像素 (px)</span>
         </el-form-item>
-        
+
         <el-form-item label="轮播间隔">
-          <el-input-number v-model="tempConfig.interval" :min="1000" :max="10000" :step="500"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.interval"
+            :min="1000"
+            :max="10000"
+            :step="500"
+          ></el-input-number>
           <span class="form-tip">毫秒</span>
         </el-form-item>
-        
+
         <el-form-item label="自动播放">
           <el-switch v-model="tempConfig.autoplay"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="显示标题">
           <el-switch v-model="tempConfig.showTitle"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="栏目选择">
           <el-select v-model="tempConfig.columnId" placeholder="选择栏目">
             <el-option
               v-for="column in columns"
               :key="column.id"
               :label="column.name"
-              :value="column.id">
+              :value="column.id"
+            >
             </el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="最大条数">
-          <el-input-number v-model="tempConfig.maxItems" :min="1" :max="10" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.maxItems"
+            :min="1"
+            :max="10"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -93,11 +110,11 @@
 </template>
 
 <script>
-import api from '@/services/api';
-import { mapState } from 'vuex';
+import api from "@/services/api";
+import { mapState } from "vuex";
 
 export default {
-  name: 'CarouselWidget1',
+  name: "CarouselWidget1",
   props: {
     config: {
       type: Object,
@@ -107,10 +124,10 @@ export default {
         autoplay: true,
         interval: 5000,
         showTitle: true,
-        columnId: '',
-        maxItems: 5
-      })
-    }
+        columnId: "",
+        maxItems: 5,
+      }),
+    },
   },
   data() {
     return {
@@ -119,15 +136,15 @@ export default {
       items: [],
       configDialogVisible: false,
       tempConfig: {},
-      configCallback: null
-    }
+      configCallback: null,
+    };
   },
   computed: {
-    ...mapState('column', ['columns']),
-    
+    ...mapState("column", ["columns"]),
+
     currentItem() {
       return this.items[this.currentIndex] || {};
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -135,17 +152,17 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
-    console.log('=======CarouselWidget1 created');
-    
+    console.log("=======CarouselWidget1 created");
+
     // 确保有栏目数据
     if (this.columns.length === 0) {
-      this.$store.dispatch('column/fetchColumns');
+      this.$store.dispatch("column/fetchColumns");
     }
-    
+
     this.fetchData();
   },
   beforeDestroy() {
@@ -157,11 +174,11 @@ export default {
       try {
         // 从API获取轮播数据
         this.items = await api.getNewsByColumn(
-          this.config.columnId || 'headlines',
+          this.config.columnId || "headlines",
           this.config.maxItems || 5
         );
       } catch (error) {
-        console.error('获取轮播数据失败:', error);
+        console.error("获取轮播数据失败:", error);
         this.items = [];
       } finally {
         this.loading = false;
@@ -180,23 +197,23 @@ export default {
     showSettingDialog(callback) {
       // 保存回调函数
       this.configCallback = callback;
-      
+
       // 复制当前配置到临时配置对象
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
-      
+
       // 显示配置对话框
       this.configDialogVisible = true;
     },
     // 保存配置
     saveConfig() {
       // 如果有回调函数，则调用它并传递新配置
-      if (typeof this.configCallback === 'function') {
+      if (typeof this.configCallback === "function") {
         this.configCallback(this.tempConfig);
       }
-      
+
       // 更新本地配置
       this.config = JSON.parse(JSON.stringify(this.tempConfig));
-      
+
       // 关闭对话框
       this.configDialogVisible = false;
     },
@@ -205,7 +222,7 @@ export default {
       // 清空临时配置和回调
       this.tempConfig = {};
       this.configCallback = null;
-    }
+    },
   },
 };
 </script>
@@ -249,7 +266,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   .indicator {
     width: 8px;
     height: 8px;
@@ -257,7 +274,7 @@ export default {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
-    
+
     &.active {
       background: #fff;
       width: 24px;
@@ -307,4 +324,4 @@ export default {
   color: #909399;
   font-size: 12px;
 }
-</style> 
+</style>

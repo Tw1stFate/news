@@ -4,37 +4,47 @@
     <div v-if="loading" class="loading">
       <el-skeleton animated>
         <template slot="template">
-          <el-skeleton-item variant="image" style="width: 100%; height: 200px" />
+          <el-skeleton-item
+            variant="image"
+            style="width: 100%; height: 200px"
+          />
           <el-skeleton-item variant="p" style="width: 50%" />
           <el-skeleton-item variant="text" style="width: 100%" />
           <el-skeleton-item variant="text" style="width: 100%" />
         </template>
       </el-skeleton>
     </div>
-    <div v-else-if="newsItems && newsItems.length > 0" class="image-news-content" :class="positionClass">
+    <div
+      v-else-if="newsItems && newsItems.length > 0"
+      class="image-news-content"
+      :class="positionClass"
+    >
       <div class="news-image">
-        <img :src="newsItems[0].image" :alt="newsItems[0].title">
+        <img :src="newsItems[0].image" :alt="newsItems[0].title" />
       </div>
       <div class="news-details">
         <h4 class="news-title">{{ newsItems[0].title }}</h4>
-        <p v-if="config.description" class="news-summary">{{ newsItems[0].summary }}</p>
+        <p v-if="config.description" class="news-summary">
+          {{ newsItems[0].summary }}
+        </p>
         <div class="news-date">{{ newsItems[0].date }}</div>
       </div>
     </div>
     <el-empty v-else description="暂无新闻" />
-    
+
     <!-- 配置对话框 -->
     <el-dialog
       title="图文新闻组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="标题">
           <el-input v-model="tempConfig.title"></el-input>
         </el-form-item>
-        
+
         <el-form-item label="图片位置">
           <el-select v-model="tempConfig.imagePosition">
             <el-option label="左侧" value="left"></el-option>
@@ -42,11 +52,11 @@
             <el-option label="顶部" value="top"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="显示描述">
           <el-switch v-model="tempConfig.description"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="内容分类">
           <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
             <el-option label="生活方式" value="lifestyle"></el-option>
@@ -64,36 +74,36 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import api from "@/services/api";
 
 export default {
-  name: 'ImageNewsWidget',
+  name: "ImageNewsWidget",
   props: {
     config: {
       type: Object,
       required: true,
       default: () => ({
-        title: '图文新闻',
-        imagePosition: 'left',
+        title: "图文新闻",
+        imagePosition: "left",
         description: true,
-        categoryId: 'lifestyle',
-        maxItems: 1
-      })
-    }
+        categoryId: "lifestyle",
+        maxItems: 1,
+      }),
+    },
   },
   data() {
     return {
       loading: true,
       newsItems: null,
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
     };
   },
   computed: {
     // 根据图片位置设置不同的 CSS 类
     positionClass() {
       return `image-${this.config.imagePosition}`;
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -101,8 +111,8 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
     this.fetchData();
@@ -113,35 +123,35 @@ export default {
       try {
         // 从API获取图片新闻数据
         const newsList = await api.getNewsByColumn(
-          this.config.categoryId || 'lifestyle',
+          this.config.categoryId || "lifestyle",
           this.config.maxItems || 6
         );
-        this.newsItems = newsList.filter(item => item.image);
+        this.newsItems = newsList.filter((item) => item.image);
       } catch (error) {
-        console.error('获取图片新闻数据失败:', error);
+        console.error("获取图片新闻数据失败:", error);
         this.newsItems = [];
       } finally {
         this.loading = false;
       }
     },
-    
+
     // 新增：显示设置对话框的方法
     showSettingDialog() {
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
-    
+
     // 对话框关闭处理
     handleDialogClosed() {
       this.configDialogVisible = false;
     },
-    
+
     // 保存配置
     saveConfig() {
-      this.$root.$emit('widget-config-updated', 'image-news', this.tempConfig);
+      this.$root.$emit("widget-config-updated", "image-news", this.tempConfig);
       this.configDialogVisible = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -240,4 +250,4 @@ export default {
 .loading {
   padding: 20px 0;
 }
-</style> 
+</style>

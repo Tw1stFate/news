@@ -3,22 +3,26 @@
     <div class="nav-container">
       <!-- 左侧Logo区域 -->
       <div class="logo-area" v-if="config.logoUrl">
-        <img :src="config.logoUrl" alt="Logo" class="logo-image">
+        <img :src="config.logoUrl" alt="Logo" class="logo-image" />
       </div>
-      
+
       <!-- 中间导航菜单 -->
       <div class="menu-area">
         <div class="main-menu">
-          <div 
-            v-for="(item, index) in mainMenuItems" 
+          <div
+            v-for="(item, index) in mainMenuItems"
             :key="index"
-            :class="['menu-item', { 'active': item.active, 'dropdown-item': item.dropdown }]"
-            @click="handleMainMenuClick(item, $event)">
+            :class="[
+              'menu-item',
+              { active: item.active, 'dropdown-item': item.dropdown },
+            ]"
+            @click="handleMainMenuClick(item, $event)"
+          >
             {{ item.label }}
           </div>
         </div>
       </div>
-      
+
       <!-- 右侧搜索框 -->
       <div class="search-area">
         <el-input
@@ -29,11 +33,12 @@
           @focus="showSearchDialog"
           readonly
           size="small"
-          class="search-input">
+          class="search-input"
+        >
         </el-input>
       </div>
     </div>
-    
+
     <!-- 分行下拉菜单 -->
     <transition name="dropdown">
       <div class="branch-dropdown" v-if="showBranchMenu">
@@ -43,11 +48,12 @@
           </div>
           <div v-else>
             <div class="branch-list">
-              <div 
-                v-for="(branch, index) in branchList" 
+              <div
+                v-for="(branch, index) in branchList"
                 :key="index"
                 class="branch-item"
-                @click="handleBranchClick(branch)">
+                @click="handleBranchClick(branch)"
+              >
                 {{ branch.name }}
               </div>
             </div>
@@ -55,42 +61,81 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- 搜索弹窗 -->
     <search-dialog :visible.sync="searchDialogVisible" />
-    
+
     <!-- 配置对话框 -->
     <el-dialog
       title="导航栏组件配置"
       :visible.sync="configDialogVisible"
       width="600px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="Logo URL">
-          <el-input v-model="tempConfig.logoUrl" placeholder="输入Logo图片URL"></el-input>
+          <el-input
+            v-model="tempConfig.logoUrl"
+            placeholder="输入Logo图片URL"
+          ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="显示搜索框">
           <el-switch v-model="tempConfig.showSearch"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="菜单项">
-          <div v-for="(item, index) in tempConfig.menuItems" :key="index" class="menu-item-config">
+          <div
+            v-for="(item, index) in tempConfig.menuItems"
+            :key="index"
+            class="menu-item-config"
+          >
             <div class="menu-item-form">
-              <el-input v-model="item.label" placeholder="菜单标签" size="mini" style="width: 120px;"></el-input>
-              <el-input v-model="item.url" placeholder="URL" size="mini" style="width: 200px;" v-if="!item.dropdown"></el-input>
-              <el-select v-model="item.target" size="mini" style="width: 100px;" v-if="!item.dropdown">
+              <el-input
+                v-model="item.label"
+                placeholder="菜单标签"
+                size="mini"
+                style="width: 120px"
+              ></el-input>
+              <el-input
+                v-model="item.url"
+                placeholder="URL"
+                size="mini"
+                style="width: 200px"
+                v-if="!item.dropdown"
+              ></el-input>
+              <el-select
+                v-model="item.target"
+                size="mini"
+                style="width: 100px"
+                v-if="!item.dropdown"
+              >
                 <el-option label="当前窗口" value="_self"></el-option>
                 <el-option label="新窗口" value="_blank"></el-option>
               </el-select>
-              <el-checkbox v-model="item.dropdown" @change="handleDropdownChange(item)">下拉菜单</el-checkbox>
+              <el-checkbox
+                v-model="item.dropdown"
+                @change="handleDropdownChange(item)"
+                >下拉菜单</el-checkbox
+              >
               <el-checkbox v-model="item.active">激活</el-checkbox>
-              <el-button type="danger" size="mini" icon="el-icon-delete" @click="removeMenuItem(index)"></el-button>
+              <el-button
+                type="danger"
+                size="mini"
+                icon="el-icon-delete"
+                @click="removeMenuItem(index)"
+              ></el-button>
             </div>
           </div>
           <div class="add-menu-item">
-            <el-button type="primary" size="small" icon="el-icon-plus" @click="addMenuItem">添加菜单项</el-button>
+            <el-button
+              type="primary"
+              size="small"
+              icon="el-icon-plus"
+              @click="addMenuItem"
+              >添加菜单项</el-button
+            >
           </div>
         </el-form-item>
       </el-form>
@@ -103,34 +148,34 @@
 </template>
 
 <script>
-import api from '@/services/api';
-import SearchDialog from './SearchDialog.vue';
+import api from "@/services/api";
+import SearchDialog from "./SearchDialog.vue";
 
 export default {
-  name: 'NavBarWidget',
+  name: "NavBarWidget",
   components: {
-    SearchDialog
+    SearchDialog,
   },
   props: {
     config: {
       type: Object,
       default: () => ({
-        logoUrl: '',
+        logoUrl: "",
         showSearch: true,
-        menuItems: []
-      })
-    }
+        menuItems: [],
+      }),
+    },
   },
   data() {
     return {
-      searchKeyword: '',
+      searchKeyword: "",
       showBranchMenu: false,
       branchList: [],
       loading: false,
       mainMenuItems: [],
       searchDialogVisible: false,
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
     };
   },
   created() {
@@ -140,71 +185,86 @@ export default {
     } else {
       // 默认菜单项
       this.mainMenuItems = [
-        { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
-        { label: '总行门户', url: '/', target: '_self', active: true },
-        { label: '分行门户', dropdown: true, active: false },
-        { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
-        { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
+        {
+          label: "集团门户",
+          url: "https://www.example.com/group",
+          target: "_blank",
+          active: false,
+        },
+        { label: "总行门户", url: "/", target: "_self", active: true },
+        { label: "分行门户", dropdown: true, active: false },
+        {
+          label: "广议",
+          url: "https://www.example.com/guangyi",
+          target: "_blank",
+          active: false,
+        },
+        {
+          label: "采购公告",
+          url: "https://www.example.com/procurement",
+          target: "_blank",
+          active: false,
+        },
       ];
     }
-    
+
     // 预加载分行数据
     this.loadBranchData();
-    
+
     // 添加点击外部关闭菜单
-    document.addEventListener('click', this.handleOutsideClick);
+    document.addEventListener("click", this.handleOutsideClick);
   },
   beforeDestroy() {
     // 清理事件监听器
-    document.removeEventListener('click', this.handleOutsideClick);
+    document.removeEventListener("click", this.handleOutsideClick);
   },
   methods: {
     // 配置对话框方法
     showSettingDialog() {
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
-      
+
       // 确保menuItems存在
       if (!this.tempConfig.menuItems || !this.tempConfig.menuItems.length) {
         this.tempConfig.menuItems = [...this.mainMenuItems];
       }
     },
-    
+
     handleDialogClosed() {
       this.configDialogVisible = false;
     },
-    
+
     saveConfig() {
-      this.$root.$emit('widget-config-updated', 'nav-bar', this.tempConfig);
+      this.$root.$emit("widget-config-updated", "nav-bar", this.tempConfig);
       this.configDialogVisible = false;
     },
-    
+
     addMenuItem() {
       this.tempConfig.menuItems.push({
-        label: '新菜单项',
-        url: '#',
-        target: '_self',
+        label: "新菜单项",
+        url: "#",
+        target: "_self",
         active: false,
-        dropdown: false
+        dropdown: false,
       });
     },
-    
+
     removeMenuItem(index) {
       this.tempConfig.menuItems.splice(index, 1);
     },
-    
+
     handleDropdownChange(item) {
       if (item.dropdown) {
         // 如果设为下拉菜单，清除url和target
-        item.url = '';
-        item.target = '';
+        item.url = "";
+        item.target = "";
       } else {
         // 如果取消下拉菜单，设置默认值
-        item.url = '#';
-        item.target = '_self';
+        item.url = "#";
+        item.target = "_self";
       }
     },
-    
+
     // 现有方法
     async loadBranchData() {
       // 预加载分行数据，但不显示
@@ -212,7 +272,7 @@ export default {
       try {
         this.branchList = await api.getBranchList();
       } catch (error) {
-        console.error('加载分行数据失败:', error);
+        console.error("加载分行数据失败:", error);
         this.branchList = [];
       } finally {
         this.loading = false;
@@ -224,8 +284,8 @@ export default {
         // 阻止事件传播，避免点击后立即关闭菜单
         event.stopPropagation();
       } else if (item.url) {
-        if (item.target === '_blank') {
-          window.open(item.url, '_blank');
+        if (item.target === "_blank") {
+          window.open(item.url, "_blank");
         } else {
           window.location.href = item.url;
         }
@@ -233,7 +293,7 @@ export default {
     },
     handleBranchClick(branch) {
       // 跳转到分行页面或触发其他操作
-      console.log('分行点击:', branch);
+      console.log("分行点击:", branch);
       this.showBranchMenu = false;
     },
     handleSearch() {
@@ -247,8 +307,8 @@ export default {
       if (this.showBranchMenu && !this.$el.contains(event.target)) {
         this.showBranchMenu = false;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -260,7 +320,7 @@ export default {
   background-color: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  
+
   .nav-container {
     display: flex;
     align-items: center;
@@ -270,24 +330,24 @@ export default {
     max-width: 1200px;
     margin: 0 auto;
   }
-  
+
   .logo-area {
     flex: 0 0 auto;
     margin-right: 20px;
-    
+
     .logo-image {
       max-height: 40px;
       max-width: 80px;
     }
   }
-  
+
   .menu-area {
     flex: 1;
-    
+
     .main-menu {
       display: flex;
       align-items: center;
-      
+
       .menu-item {
         padding: 0 20px;
         height: 60px;
@@ -296,25 +356,25 @@ export default {
         font-size: 16px;
         transition: all 0.2s;
         position: relative;
-        
+
         &:hover {
           color: #c00;
         }
-        
+
         &.active {
           background-color: #c00;
           color: #fff;
-          
+
           &:hover {
             background-color: #a00;
           }
         }
-        
+
         &.dropdown-item {
           position: relative;
-          
+
           &:after {
-            content: '';
+            content: "";
             display: inline-block;
             width: 0;
             height: 0;
@@ -328,15 +388,15 @@ export default {
       }
     }
   }
-  
+
   .search-area {
     flex: 0 0 auto;
     width: 200px;
     margin-right: 10px;
-    
+
     .search-input {
       width: 100%;
-      
+
       ::v-deep .el-input__inner {
         height: 30px;
         line-height: 30px;
@@ -346,16 +406,16 @@ export default {
         border: 1px solid #ddd;
         font-size: 12px;
         color: #666;
-        
+
         &::placeholder {
           color: #999;
         }
-        
+
         &:focus {
           border-color: #c00;
         }
       }
-      
+
       ::v-deep .el-input__prefix {
         left: 10px;
         line-height: 30px;
@@ -363,7 +423,7 @@ export default {
       }
     }
   }
-  
+
   .branch-dropdown {
     position: relative !important;
     width: 100%;
@@ -377,29 +437,29 @@ export default {
     min-height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    
+
     .branch-dropdown-container {
       padding: 15px;
       max-width: 1200px;
       margin: 0 auto;
     }
-    
+
     .branch-loading {
       padding: 20px;
       text-align: center;
       color: #999;
-      
+
       i {
         margin-right: 5px;
       }
     }
-    
+
     .branch-list {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-start;
       padding: 10px 0;
-      
+
       .branch-item {
         width: 16.666%;
         padding: 8px 0;
@@ -414,30 +474,27 @@ export default {
         background-color: #fff;
         border-radius: 4px;
         box-sizing: border-box;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
         &:hover {
           color: #c00;
           font-weight: bold;
           background-color: #f5f5f5;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
       }
     }
   }
-  
+
   .dropdown-enter-active,
   .dropdown-leave-active {
     transition: opacity 0.2s, transform 0.2s;
   }
-  
+
   .dropdown-enter,
   .dropdown-leave-to {
     opacity: 0;
     transform: translateY(-10px);
   }
 }
-</style> 
-
-
-
+</style>

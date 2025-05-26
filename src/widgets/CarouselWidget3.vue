@@ -7,8 +7,8 @@
       <div class="carousel-container">
         <!-- 左侧图片区域 -->
         <div class="image-area">
-          <el-carousel 
-            :interval="config.interval" 
+          <el-carousel
+            :interval="config.interval"
             :autoplay="config.autoplay"
             :height="`${config.height}px`"
             indicator-position="none"
@@ -19,7 +19,11 @@
           >
             <el-carousel-item v-for="item in items" :key="item.id">
               <div class="carousel-item">
-                <img :src="item.image" :alt="item.title" class="carousel-image">
+                <img
+                  :src="item.image"
+                  :alt="item.title"
+                  class="carousel-image"
+                />
               </div>
             </el-carousel-item>
           </el-carousel>
@@ -31,8 +35,8 @@
             <h3>最新动态</h3>
           </div>
           <div class="list-container">
-            <div 
-              v-for="(item, index) in items" 
+            <div
+              v-for="(item, index) in items"
               :key="index"
               class="title-item"
               :class="{ active: currentIndex === index }"
@@ -41,44 +45,57 @@
             >
               <div class="title-content">
                 <span class="title-text">{{ item.title }}</span>
-                <span class="title-date" v-if="item.date && config.showDate">{{ item.date }}</span>
+                <span class="title-date" v-if="item.date && config.showDate">{{
+                  item.date
+                }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </template>
-    
+
     <div v-else class="empty-carousel">
       <el-empty description="暂无轮播数据"></el-empty>
     </div>
-    
+
     <!-- 组件配置对话框 -->
     <el-dialog
       title="图文轮播+标题列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="轮播高度">
-          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.height"
+            :min="200"
+            :max="600"
+            :step="10"
+          ></el-input-number>
           <span class="form-tip">像素 (px)</span>
         </el-form-item>
-        
+
         <el-form-item label="自动播放">
           <el-switch v-model="tempConfig.autoplay"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="轮播间隔" v-if="tempConfig.autoplay">
-          <el-input-number v-model="tempConfig.interval" :min="1000" :max="10000" :step="500"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.interval"
+            :min="1000"
+            :max="10000"
+            :step="500"
+          ></el-input-number>
           <span class="form-tip">毫秒</span>
         </el-form-item>
-        
+
         <el-form-item label="显示日期">
           <el-switch v-model="tempConfig.showDate"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="内容分类">
           <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
             <el-option label="头条新闻" value="headlines"></el-option>
@@ -87,9 +104,14 @@
             <el-option label="国际新闻" value="international"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="最大图片数量">
-          <el-input-number v-model="tempConfig.maxItems" :min="2" :max="10" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.maxItems"
+            :min="2"
+            :max="10"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -101,10 +123,10 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import api from "@/services/api";
 
 export default {
-  name: 'CarouselWidget3',
+  name: "CarouselWidget3",
   props: {
     config: {
       type: Object,
@@ -114,10 +136,10 @@ export default {
         autoplay: true,
         interval: 5000,
         showDate: true,
-        categoryId: 'headlines',
-        maxItems: 5
-      })
-    }
+        categoryId: "headlines",
+        maxItems: 5,
+      }),
+    },
   },
   data() {
     return {
@@ -125,13 +147,13 @@ export default {
       loading: true,
       items: [],
       configDialogVisible: false,
-      tempConfig: {}
-    }
+      tempConfig: {},
+    };
   },
   computed: {
     currentItem() {
       return this.items[this.currentIndex] || {};
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -139,8 +161,8 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
     this.fetchData();
@@ -154,11 +176,11 @@ export default {
       try {
         // 从API获取轮播数据
         this.items = await api.getNewsByColumn(
-          this.config.categoryId || 'headlines',
+          this.config.categoryId || "headlines",
           this.config.maxItems || 5
         );
       } catch (error) {
-        console.error('获取轮播数据失败:', error);
+        console.error("获取轮播数据失败:", error);
         this.items = [];
       } finally {
         this.loading = false;
@@ -188,10 +210,10 @@ export default {
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', 'carousel-3', this.tempConfig);
+      this.$root.$emit("widget-config-updated", "carousel-3", this.tempConfig);
       this.configDialogVisible = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -223,7 +245,7 @@ export default {
   flex: 3;
   min-width: 0;
   position: relative;
-  
+
   :deep(.el-carousel),
   :deep(.el-carousel__container) {
     height: 100% !important;
@@ -249,12 +271,12 @@ export default {
   border-left: 1px solid #ebeef5;
   background: #fff;
   max-width: 320px;
-  
+
   .list-header {
     padding: 12px 16px;
     border-bottom: 1px solid #ebeef5;
     background-color: #f5f7fa;
-    
+
     h3 {
       margin: 0;
       font-size: 16px;
@@ -262,11 +284,11 @@ export default {
       color: #303133;
     }
   }
-  
+
   .list-container {
     flex: 1;
     overflow-y: auto;
-    
+
     &::-webkit-scrollbar {
       width: 4px;
     }
@@ -280,41 +302,41 @@ export default {
       background: transparent;
     }
   }
-  
+
   .title-item {
     padding: 12px 16px;
     cursor: pointer;
     border-bottom: 1px solid #f5f7fa;
     transition: all 0.3s;
-    
+
     &:hover {
       background: #f5f7fa;
     }
-    
+
     &.active {
       background: #f0f7ff;
-      border-left: 3px solid #409EFF;
-      color: #409EFF;
+      border-left: 3px solid #409eff;
+      color: #409eff;
       position: relative;
-      
+
       &::before {
-        content: '';
+        content: "";
         position: absolute;
         left: -7px;
         top: 50%;
         transform: translateY(-50%);
         border-top: 6px solid transparent;
         border-bottom: 6px solid transparent;
-        border-right: 6px solid #409EFF;
+        border-right: 6px solid #409eff;
       }
     }
-    
+
     .title-content {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
-    
+
     .title-text {
       font-size: 14px;
       line-height: 1.4;
@@ -323,7 +345,7 @@ export default {
       -webkit-line-clamp: 2;
       overflow: hidden;
     }
-    
+
     .title-date {
       font-size: 12px;
       color: #909399;
@@ -350,7 +372,7 @@ export default {
 // 自定义轮播箭头样式
 :deep(.el-carousel__arrow) {
   background-color: rgba(0, 0, 0, 0.4);
-  
+
   &:hover {
     background-color: rgba(0, 0, 0, 0.6);
   }
@@ -363,4 +385,4 @@ export default {
 :deep(.el-carousel__arrow--right) {
   right: 15px;
 }
-</style> 
+</style>

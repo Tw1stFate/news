@@ -2,61 +2,86 @@
   <div class="news-list-widget" :style="{ height: `${config.height}px` }">
     <div class="widget-header">
       <div class="title-area">
-        <h3 class="category-title" ref="categoryTitle">{{ config.title || '双轻业务' }}</h3>
+        <h3 class="category-title" ref="categoryTitle">
+          {{ config.title || "双轻业务" }}
+        </h3>
       </div>
-      <div class="more-link" @click="handleMoreClick">
-        更多
-      </div>
+      <div class="more-link" @click="handleMoreClick">更多</div>
     </div>
-    
+
     <!-- 标题下方的指示器 -->
     <div class="title-indicator">
-      <div class="indicator-active" :style="{ width: `${indicatorWidth}px`, left: `${indicatorLeft}px` }"></div>
+      <div
+        class="indicator-active"
+        :style="{ width: `${indicatorWidth}px`, left: `${indicatorLeft}px` }"
+      ></div>
     </div>
-    
+
     <div v-if="loading" class="loading-content">
       <el-skeleton :rows="config.maxItems || 4" animated />
     </div>
-    
+
     <div class="widget-content" v-else-if="newsItems && newsItems.length > 0">
       <!-- 左侧大图 -->
       <div class="feature-image" @click="handleItemClick(newsItems[0])">
-        <img :src="newsItems[0].image || newsItems[0].thumbnail" :alt="newsItems[0].title">
+        <img
+          :src="newsItems[0].image || newsItems[0].thumbnail"
+          :alt="newsItems[0].title"
+        />
       </div>
-      
+
       <!-- 右侧列表 -->
       <div class="news-list">
-        <div v-for="(item, index) in displayItems" :key="index" class="news-item" @click="handleItemClick(item)">
+        <div
+          v-for="(item, index) in displayItems"
+          :key="index"
+          class="news-item"
+          @click="handleItemClick(item)"
+        >
           <div class="item-title" :title="item.title">{{ item.title }}</div>
         </div>
       </div>
     </div>
-    
+
     <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
-    
+
     <!-- 组件配置对话框 -->
     <el-dialog
       title="图文混排列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="组件高度">
-          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.height"
+            :min="200"
+            :max="600"
+            :step="10"
+          ></el-input-number>
           <span class="form-tip">像素 (px)</span>
         </el-form-item>
-        
+
         <el-form-item label="标题">
-          <el-input v-model="tempConfig.title" placeholder="请输入栏目标题"></el-input>
+          <el-input
+            v-model="tempConfig.title"
+            placeholder="请输入栏目标题"
+          ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="显示数量">
-          <el-input-number v-model="tempConfig.count" :min="1" :max="10" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.count"
+            :min="1"
+            :max="10"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
-        
+
         <el-form-item label="内容分类">
           <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
             <el-option label="财经新闻" value="finance"></el-option>
@@ -65,9 +90,14 @@
             <el-option label="娱乐新闻" value="entertainment"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="最大获取数量">
-          <el-input-number v-model="tempConfig.maxItems" :min="4" :max="10" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.maxItems"
+            :min="4"
+            :max="10"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -79,22 +109,22 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import api from "@/services/api";
 
 export default {
-  name: 'NewsListWidget3',
+  name: "NewsListWidget3",
   props: {
     config: {
       type: Object,
       required: true,
       default: () => ({
         height: 400,
-        title: '双轻业务',
+        title: "双轻业务",
         count: 4,
-        categoryId: 'finance',
-        maxItems: 4
-      })
-    }
+        categoryId: "finance",
+        maxItems: 4,
+      }),
+    },
   },
   data() {
     return {
@@ -103,13 +133,13 @@ export default {
       loading: true,
       newsItems: [],
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
     };
   },
   computed: {
     displayItems() {
       return this.newsItems.slice(0, this.config.count || 4);
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -117,8 +147,8 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
     this.fetchData();
@@ -129,11 +159,11 @@ export default {
       try {
         // 从API获取新闻列表数据
         this.newsItems = await api.getNewsByColumn(
-          this.config.categoryId || 'finance',
+          this.config.categoryId || "finance",
           this.config.maxItems || 4
         );
       } catch (error) {
-        console.error('获取新闻数据失败:', error);
+        console.error("获取新闻数据失败:", error);
         this.newsItems = [];
       } finally {
         this.loading = false;
@@ -144,11 +174,11 @@ export default {
     },
     handleItemClick(item) {
       if (item.link) {
-        window.open(item.link, '_blank');
+        window.open(item.link, "_blank");
       }
     },
     handleMoreClick() {
-      this.$emit('more-click', this.config.categoryId || 'finance');
+      this.$emit("more-click", this.config.categoryId || "finance");
     },
     updateIndicatorWidth() {
       this.$nextTick(() => {
@@ -172,23 +202,23 @@ export default {
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', {
+      this.$root.$emit("widget-config-updated", {
         widgetId: this.widgetId,
-        config: this.tempConfig
+        config: this.tempConfig,
       });
       this.configDialogVisible = false;
-    }
+    },
   },
   mounted() {
     this.updateIndicatorWidth();
     // 监听窗口大小变化，更新指示器宽度
-    window.addEventListener('resize', this.updateIndicatorWidth);
+    window.addEventListener("resize", this.updateIndicatorWidth);
   },
   beforeDestroy() {
     // 移除事件监听
-    window.removeEventListener('resize', this.updateIndicatorWidth);
-    this.$root.$off('widget-config-requested', this.handleConfigRequest);
-  }
+    window.removeEventListener("resize", this.updateIndicatorWidth);
+    this.$root.$off("widget-config-requested", this.handleConfigRequest);
+  },
 };
 </script>
 
@@ -217,12 +247,12 @@ export default {
   height: 40px;
   border-bottom: none;
   background-color: #fff;
-  
+
   .title-area {
     display: flex;
     align-items: center;
     padding-left: 0;
-    
+
     .category-title {
       margin: 0;
       font-size: 18px;
@@ -230,12 +260,12 @@ export default {
       color: #333;
     }
   }
-  
+
   .more-link {
     font-size: 14px;
     color: #666;
     cursor: pointer;
-    
+
     &:hover {
       color: #820014;
     }
@@ -249,7 +279,7 @@ export default {
   width: 100%;
   margin: 0 0 10px 0;
   position: relative;
-  
+
   .indicator-active {
     position: absolute;
     top: 0;
@@ -272,13 +302,13 @@ export default {
   overflow: hidden;
   background-color: #000;
   cursor: pointer;
-  
+
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s;
-    
+
     &:hover {
       transform: scale(1.05);
     }
@@ -292,7 +322,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  
+
   &::-webkit-scrollbar {
     width: 4px;
   }
@@ -313,13 +343,13 @@ export default {
   transition: all 0.3s;
   display: flex;
   align-items: center;
-  
+
   &:hover {
     .item-title {
       color: #820014;
     }
   }
-  
+
   .item-title {
     font-size: 14px;
     line-height: 1.6;
@@ -329,7 +359,7 @@ export default {
     white-space: nowrap;
     position: relative;
     padding-left: 10px;
-    
+
     &::before {
       content: "";
       display: block;
@@ -351,4 +381,4 @@ export default {
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>

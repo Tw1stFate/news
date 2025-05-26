@@ -2,19 +2,24 @@
   <div class="news-list-widget" :style="{ height: `${config.height}px` }">
     <div class="widget-header">
       <div class="title-area">
-        <h3 class="category-title">{{ config.title || '行务要闻' }}</h3>
+        <h3 class="category-title">{{ config.title || "行务要闻" }}</h3>
       </div>
       <div class="more-link" @click="handleMoreClick">
         更多 <i class="el-icon-arrow-right"></i>
       </div>
     </div>
-    
+
     <div v-if="loading" class="loading-list">
       <el-skeleton :rows="config.maxItems || 7" animated />
     </div>
-    
+
     <div class="news-list" v-else-if="newsItems && newsItems.length > 0">
-      <div v-for="(item, index) in displayItems" :key="index" class="news-item" @click="handleItemClick(item)">
+      <div
+        v-for="(item, index) in displayItems"
+        :key="index"
+        class="news-item"
+        @click="handleItemClick(item)"
+      >
         <div class="bullet-point">
           <span class="bullet"></span>
         </div>
@@ -24,7 +29,7 @@
         </div>
       </div>
     </div>
-    
+
     <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
@@ -35,25 +40,39 @@
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="组件高度">
-          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.height"
+            :min="200"
+            :max="600"
+            :step="10"
+          ></el-input-number>
           <span class="form-tip">像素 (px)</span>
         </el-form-item>
-        
+
         <el-form-item label="标题">
-          <el-input v-model="tempConfig.title" placeholder="请输入栏目标题"></el-input>
+          <el-input
+            v-model="tempConfig.title"
+            placeholder="请输入栏目标题"
+          ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="显示数量">
-          <el-input-number v-model="tempConfig.count" :min="1" :max="20" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.count"
+            :min="1"
+            :max="20"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
-        
+
         <el-form-item label="显示日期">
           <el-switch v-model="tempConfig.showDate"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="内容分类">
           <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
             <el-option label="国内新闻" value="domestic"></el-option>
@@ -62,9 +81,14 @@
             <el-option label="科技新闻" value="technology"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="最大获取数量">
-          <el-input-number v-model="tempConfig.maxItems" :min="5" :max="20" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.maxItems"
+            :min="5"
+            :max="20"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -76,36 +100,36 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import api from "@/services/api";
 
 export default {
-  name: 'NewsListWidget2',
+  name: "NewsListWidget2",
   props: {
     config: {
       type: Object,
       required: true,
       default: () => ({
         height: 330,
-        title: '行务要闻',
+        title: "行务要闻",
         count: 7,
         showDate: true,
-        categoryId: 'domestic',
-        maxItems: 7
-      })
-    }
+        categoryId: "domestic",
+        maxItems: 7,
+      }),
+    },
   },
   data() {
     return {
       loading: true,
       newsItems: [],
       configDialogVisible: false,
-      tempConfig: {}
+      tempConfig: {},
     };
   },
   computed: {
     displayItems() {
       return this.newsItems.slice(0, this.config.count || 7);
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -113,8 +137,8 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
     this.fetchData();
@@ -128,11 +152,11 @@ export default {
       try {
         // 从API获取新闻列表数据
         this.newsItems = await api.getNewsByColumn(
-          this.config.categoryId || 'domestic',
+          this.config.categoryId || "domestic",
           this.config.maxItems || 7
         );
       } catch (error) {
-        console.error('获取新闻数据失败:', error);
+        console.error("获取新闻数据失败:", error);
         this.newsItems = [];
       } finally {
         this.loading = false;
@@ -140,11 +164,11 @@ export default {
     },
     handleItemClick(item) {
       if (item.link) {
-        window.open(item.link, '_blank');
+        window.open(item.link, "_blank");
       }
     },
     handleMoreClick() {
-      this.$emit('more-click', this.config.categoryId || 'domestic');
+      this.$emit("more-click", this.config.categoryId || "domestic");
     },
     showSettingDialog() {
       this.configDialogVisible = true;
@@ -155,10 +179,10 @@ export default {
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', 'news-list-2', this.tempConfig);
+      this.$root.$emit("widget-config-updated", "news-list-2", this.tempConfig);
       this.configDialogVisible = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -182,7 +206,7 @@ export default {
   height: 40px;
   border-bottom: 1px solid #e5e5e5;
   background-color: #fff;
-  
+
   .title-area {
     display: flex;
     align-items: center;
@@ -190,7 +214,7 @@ export default {
     background-color: #c00;
     padding: 0 16px;
     min-width: 120px;
-    
+
     .category-title {
       margin: 0;
       font-size: 15px;
@@ -198,7 +222,7 @@ export default {
       color: #fff;
     }
   }
-  
+
   .more-link {
     font-size: 12px;
     color: #666;
@@ -206,11 +230,11 @@ export default {
     display: flex;
     align-items: center;
     padding: 0 16px;
-    
+
     &:hover {
       color: #c00;
     }
-    
+
     i {
       margin-left: 4px;
       font-size: 12px;
@@ -227,7 +251,7 @@ export default {
   flex: 1;
   padding: 12px 16px;
   overflow-y: auto;
-  
+
   &::-webkit-scrollbar {
     width: 4px;
   }
@@ -250,24 +274,24 @@ export default {
   transition: all 0.3s;
   min-height: 36px;
   border-bottom: 1px dashed #ebeef5;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   &:hover {
     .item-title {
       color: #c00;
     }
   }
-  
+
   .bullet-point {
     display: flex;
     align-items: center;
     margin-right: 10px;
     width: 16px;
     justify-content: center;
-    
+
     .bullet {
       display: inline-block;
       width: 6px;
@@ -276,14 +300,14 @@ export default {
       background-color: #909399;
     }
   }
-  
+
   .item-content {
     flex: 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
     overflow: hidden;
-    
+
     .item-title {
       flex: 1;
       font-size: 14px;
@@ -294,7 +318,7 @@ export default {
       white-space: nowrap;
       padding-right: 16px;
     }
-    
+
     .item-date {
       font-size: 13px;
       color: #666;
@@ -311,4 +335,4 @@ export default {
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>

@@ -7,8 +7,8 @@
       <div class="carousel-container">
         <div class="main-content">
           <div class="carousel-main">
-            <el-carousel 
-              :interval="config.interval" 
+            <el-carousel
+              :interval="config.interval"
               :autoplay="config.autoplay"
               :height="`${config.height}px`"
               indicator-position="none"
@@ -19,8 +19,14 @@
             >
               <el-carousel-item v-for="item in items" :key="item.id">
                 <div class="carousel-item">
-                  <img :src="item.image" :alt="item.title" class="carousel-image">
-                  <div v-if="config.showTitle" class="carousel-title">{{ item.title }}</div>
+                  <img
+                    :src="item.image"
+                    :alt="item.title"
+                    class="carousel-image"
+                  />
+                  <div v-if="config.showTitle" class="carousel-title">
+                    {{ item.title }}
+                  </div>
                 </div>
               </el-carousel-item>
             </el-carousel>
@@ -29,55 +35,76 @@
 
         <!-- 缩略图导航 -->
         <div class="thumbnail-nav">
-          <div class="nav-arrow prev" @click="prev" :class="{ disabled: currentIndex === 0 }">
+          <div
+            class="nav-arrow prev"
+            @click="prev"
+            :class="{ disabled: currentIndex === 0 }"
+          >
             <i class="el-icon-arrow-up"></i>
           </div>
           <div class="thumbnails-container">
-            <div v-for="(item, index) in items"
-                 :key="index"
-                 class="thumbnail"
-                 :class="{ active: currentIndex === index }"
-                 @click="setActiveItem(index)">
-              <img :src="item.thumbnail || item.image" :alt="item.title">
+            <div
+              v-for="(item, index) in items"
+              :key="index"
+              class="thumbnail"
+              :class="{ active: currentIndex === index }"
+              @click="setActiveItem(index)"
+            >
+              <img :src="item.thumbnail || item.image" :alt="item.title" />
             </div>
           </div>
-          <div class="nav-arrow next" @click="next" :class="{ disabled: currentIndex === items.length - 1 }">
+          <div
+            class="nav-arrow next"
+            @click="next"
+            :class="{ disabled: currentIndex === items.length - 1 }"
+          >
             <i class="el-icon-arrow-down"></i>
           </div>
         </div>
       </div>
     </template>
-    
+
     <div v-else class="empty-carousel">
       <el-empty description="暂无轮播数据"></el-empty>
     </div>
-    
+
     <!-- 组件配置对话框 -->
     <el-dialog
       title="轮播图+缩略图组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
-      @closed="handleDialogClosed">
+      @closed="handleDialogClosed"
+    >
       <el-form :model="tempConfig" label-width="120px" size="small">
         <el-form-item label="轮播高度">
-          <el-input-number v-model="tempConfig.height" :min="200" :max="600" :step="10"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.height"
+            :min="200"
+            :max="600"
+            :step="10"
+          ></el-input-number>
           <span class="form-tip">像素 (px)</span>
         </el-form-item>
-        
+
         <el-form-item label="自动播放">
           <el-switch v-model="tempConfig.autoplay"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="轮播间隔" v-if="tempConfig.autoplay">
-          <el-input-number v-model="tempConfig.interval" :min="1000" :max="10000" :step="500"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.interval"
+            :min="1000"
+            :max="10000"
+            :step="500"
+          ></el-input-number>
           <span class="form-tip">毫秒</span>
         </el-form-item>
-        
+
         <el-form-item label="显示标题">
           <el-switch v-model="tempConfig.showTitle"></el-switch>
         </el-form-item>
-        
+
         <el-form-item label="内容分类">
           <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
             <el-option label="头条新闻" value="headlines"></el-option>
@@ -86,9 +113,14 @@
             <el-option label="国际新闻" value="international"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="最大图片数量">
-          <el-input-number v-model="tempConfig.maxItems" :min="2" :max="10" :step="1"></el-input-number>
+          <el-input-number
+            v-model="tempConfig.maxItems"
+            :min="2"
+            :max="10"
+            :step="1"
+          ></el-input-number>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -100,10 +132,10 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import api from "@/services/api";
 
 export default {
-  name: 'CarouselWidget2',
+  name: "CarouselWidget2",
   props: {
     config: {
       type: Object,
@@ -113,10 +145,10 @@ export default {
         autoplay: true,
         interval: 5000,
         showTitle: true,
-        categoryId: 'headlines',
-        maxItems: 5
-      })
-    }
+        categoryId: "headlines",
+        maxItems: 5,
+      }),
+    },
   },
   data() {
     return {
@@ -124,13 +156,13 @@ export default {
       loading: true,
       items: [],
       configDialogVisible: false,
-      tempConfig: {}
-    }
+      tempConfig: {},
+    };
   },
   computed: {
     currentItem() {
       return this.items[this.currentIndex] || {};
-    }
+    },
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -138,8 +170,8 @@ export default {
       handler() {
         this.fetchData();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   created() {
     this.fetchData();
@@ -153,11 +185,11 @@ export default {
       try {
         // 从API获取轮播数据
         this.items = await api.getNewsByColumn(
-          this.config.categoryId || 'headlines',
+          this.config.categoryId || "headlines",
           this.config.maxItems || 5
         );
       } catch (error) {
-        console.error('获取轮播数据失败:', error);
+        console.error("获取轮播数据失败:", error);
         this.items = [];
       } finally {
         this.loading = false;
@@ -183,21 +215,24 @@ export default {
       this.$refs.carousel.next();
     },
     scrollToActiveThumbnail() {
-      const container = this.$el.querySelector('.thumbnails-container');
+      const container = this.$el.querySelector(".thumbnails-container");
       const activeThumb = container.children[this.currentIndex];
       if (activeThumb) {
         const containerRect = container.getBoundingClientRect();
         const thumbRect = activeThumb.getBoundingClientRect();
-        
+
         // 检查缩略图是否在可视区域内
-        if (thumbRect.top < containerRect.top || thumbRect.bottom > containerRect.bottom) {
+        if (
+          thumbRect.top < containerRect.top ||
+          thumbRect.bottom > containerRect.bottom
+        ) {
           // 使用自定义滚动而不是scrollIntoView，避免触发页面滚动
           if (thumbRect.top < containerRect.top) {
             // 向上滚动
-            container.scrollTop += (thumbRect.top - containerRect.top - 8);
+            container.scrollTop += thumbRect.top - containerRect.top - 8;
           } else {
             // 向下滚动
-            container.scrollTop += (thumbRect.bottom - containerRect.bottom + 8);
+            container.scrollTop += thumbRect.bottom - containerRect.bottom + 8;
           }
         }
       }
@@ -211,10 +246,10 @@ export default {
     },
     saveConfig() {
       // 向父组件传递配置更新消息
-      this.$root.$emit('widget-config-updated', 'carousel-2', this.tempConfig);
+      this.$root.$emit("widget-config-updated", "carousel-2", this.tempConfig);
       this.configDialogVisible = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -225,7 +260,7 @@ export default {
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-  height: v-bind('`${config.height}px`');
+  height: v-bind("`${config.height}px`");
 }
 
 .loading-carousel {
@@ -328,20 +363,20 @@ export default {
     color: #909399;
     background: #fff;
     flex-shrink: 0;
-    
+
     i {
       font-size: 20px;
     }
-    
+
     &:hover {
-      color: #409EFF;
+      color: #409eff;
       background: #f5f7fa;
     }
-    
+
     &.prev {
       border-bottom: 1px solid #ebeef5;
     }
-    
+
     &.next {
       border-top: 1px solid #ebeef5;
     }
@@ -349,7 +384,7 @@ export default {
     &.disabled {
       color: #c0c4cc;
       cursor: not-allowed;
-      
+
       &:hover {
         color: #c0c4cc;
         background: #fff;
@@ -389,19 +424,19 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
     flex-shrink: 0;
-    
+
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    
+
     &:hover {
       border-color: #c0c4cc;
     }
-    
+
     &.active {
-      border-color: #409EFF;
+      border-color: #409eff;
     }
   }
 }
@@ -425,7 +460,7 @@ export default {
 // 自定义轮播箭头样式
 :deep(.el-carousel__arrow) {
   background-color: rgba(0, 0, 0, 0.4);
-  
+
   &:hover {
     background-color: rgba(0, 0, 0, 0.6);
   }
@@ -438,4 +473,4 @@ export default {
 :deep(.el-carousel__arrow--right) {
   right: 15px;
 }
-</style> 
+</style>
