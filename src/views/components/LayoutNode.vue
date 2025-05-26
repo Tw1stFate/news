@@ -298,7 +298,6 @@ export default {
 
       // 通用样式
       style.position = "relative";
-      style.display = "block";
 
       return style;
     },
