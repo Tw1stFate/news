@@ -21,9 +21,6 @@
         <i class="el-icon-menu" style="margin-right: 5px; font-size: 16px"></i>
         <span>行布局</span>
         <span v-if="node.widget"> - {{ node.widget.name }}</span>
-        <span v-if="node.height" class="node-height"
-          >高度: {{ node.height }}</span
-        >
       </div>
       <div v-else class="node-title column-title">
         <i
@@ -582,13 +579,6 @@ export default {
       i {
         margin-right: 8px;
         font-size: 16px;
-      }
-
-      .node-height {
-        margin-left: 10px;
-        font-size: 12px;
-        color: #909399;
-        font-style: italic;
       }
 
       &.column-title {

@@ -32,6 +32,7 @@
           v-for="node in layoutTree.children" 
           :key="node.id" 
           class="preview-node-wrapper"
+          :style="getNodeWrapperStyle(node)"
         >
           <preview-row :node="node" />
         </div>
@@ -61,11 +62,11 @@ const PreviewRow = {
     // 获取行样式
     const rowStyle = {
       width: "100%",
-      ...(this.node.height ? {
-        height: this.node.height.match(/^\d+$/)
-          ? `${this.node.height}px`
-          : this.node.height
-      } : {})
+      height: this.node.height ? (
+        this.node.height.match(/^\d+$/) ? `${this.node.height}px` : this.node.height
+      ) : "100%", // 设置为100%以填充父容器
+      display: "flex",
+      flexDirection: "column"
     };
 
     // 检查是否有列子节点
@@ -85,8 +86,11 @@ const PreviewRow = {
           flexDirection: "row",
           flexWrap: "nowrap",
           width: "100%",
-          gap: "16px"
-        } : {}
+          gap: "16px",
+          flex: "1"
+        } : {
+          flex: "1"
+        }
       }, this.renderChildren(h))
     ]);
   },
@@ -173,11 +177,25 @@ const PreviewRow = {
           return this.renderErrorWidget(h, `未知组件类型: ${widgetType}`);
         }
 
+        // 准备组件配置，确保高度设置正确传递
+        const config = {
+          ...node.widget.config,
+          // 如果节点有高度设置且组件配置中没有高度，则使用节点高度
+          height: node.height && !node.widget.config.height ? 
+            (node.height.match(/^\d+$/) ? parseInt(node.height) : node.height) : 
+            node.widget.config.height
+        };
+
         // 渲染实际组件
-        return h("div", { class: "preview-widget" }, [
+        return h("div", { 
+          class: "preview-widget",
+          style: node.height ? {
+            height: node.height.match(/^\d+$/) ? `${node.height}px` : node.height
+          } : {}
+        }, [
           h(widgetComponent, {
             props: {
-              config: node.widget.config || {},
+              config: config,
               columnId: node.columnId || null,
               isPreview: true // 特殊标记，告诉组件这是预览模式
             },
@@ -275,6 +293,13 @@ export default {
       }
       
       console.log(`预览布局统计: ${rowCount}行, ${columnCount}列, ${widgetCount}组件`);
+    },
+    getNodeWrapperStyle(node) {
+      const style = {};
+      if (node.height) {
+        style.height = node.height.match(/^\d+$/) ? `${node.height}px` : node.height;
+      }
+      return style;
     }
   }
 };
@@ -348,6 +373,8 @@ export default {
       
       .preview-node-wrapper {
         margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
         
         &:last-child {
           margin-bottom: 0;
@@ -375,6 +402,9 @@ export default {
     border-radius: 4px;
     background-color: #fff;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     
     &:last-child {
       margin-bottom: 0;
