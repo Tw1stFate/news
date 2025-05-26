@@ -59,13 +59,23 @@
               style="width: 120px"
               @change="handlePresetChange"
             >
-              <el-option label="不分列" value="none"></el-option>
-              <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
-              <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
-              <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
-              <el-option label="两列 (1:2)" value="1:2"></el-option>
-              <el-option label="自定义" value="custom"></el-option>
+              <el-option 
+                v-for="option in presetOptions" 
+                :key="option.value" 
+                :label="option.label" 
+                :value="option.value">
+              </el-option>
             </el-select>
+            <!-- 自定义比例输入框 -->
+            <el-input
+              v-if="showCustomInput"
+              v-model="customRatio"
+              size="mini"
+              placeholder="如 1:2:1"
+              style="width: 100px; margin-left: 8px;"
+              @change="handleCustomRatioChange"
+            >
+            </el-input>
           </div>
         </div>
 
@@ -219,8 +229,20 @@ export default {
   data() {
     return {
       isHovered: false,
-      // 添加列配置下拉选项
+      // 列配置预设选项
       columnPreset: "none",
+      // 预设选项列表
+      presetOptions: [
+        { label: "不分列", value: "none" },
+        { label: "等宽两列 (1:1)", value: "1:1" },
+        { label: "两列 (1:2)", value: "1:2" },
+        { label: "等宽三列 (1:1:1)", value: "1:1:1" },
+        { label: "三列 (1:2:1)", value: "1:2:1" },
+        { label: "自定义", value: "custom" }
+      ],
+      // 自定义比例
+      customRatio: "",
+      showCustomInput: false,
     };
   },
   computed: {
@@ -351,6 +373,7 @@ export default {
     },
     // 初始化列配置值
     initColumnPreset() {
+      // 如果不是行节点或没有子节点，使用默认值"none"
       if (
         this.node.type !== "row" ||
         !this.node.children ||
@@ -377,32 +400,33 @@ export default {
         return col.percentWidth === columnChildren[0].percentWidth;
       });
 
-      if (count === 2 && isEqualWidth) {
-        this.columnPreset = "1:1";
-      } else if (count === 3 && isEqualWidth) {
-        this.columnPreset = "1:1:1";
-      } else if (count === 3) {
-        // 检查是否为1:2:1比例
-        const widths = columnChildren.map((col) =>
-          parseFloat(col.percentWidth)
-        );
-        if (
-          Math.abs(widths[0] - widths[2]) < 1 &&
-          Math.abs(widths[1] - widths[0] * 2) < 2
-        ) {
-          this.columnPreset = "1:2:1";
+      // 根据列数和宽度比例确定预设类型
+      if (count === 2) {
+        if (isEqualWidth) {
+          this.columnPreset = "1:1";
         } else {
-          this.columnPreset = "custom";
+          // 检查是否为1:2比例
+          const widths = columnChildren.map((col) => parseFloat(col.percentWidth));
+          if (Math.abs(widths[1] / widths[0] - 2) < 0.2) {
+            this.columnPreset = "1:2";
+          } else {
+            this.columnPreset = "custom";
+          }
         }
-      } else if (count === 2) {
-        // 检查是否为1:2比例
-        const widths = columnChildren.map((col) =>
-          parseFloat(col.percentWidth)
-        );
-        if (Math.abs(widths[1] - widths[0] * 2) < 2) {
-          this.columnPreset = "1:2";
+      } else if (count === 3) {
+        if (isEqualWidth) {
+          this.columnPreset = "1:1:1";
         } else {
-          this.columnPreset = "custom";
+          // 检查是否为1:2:1比例
+          const widths = columnChildren.map((col) => parseFloat(col.percentWidth));
+          if (
+            Math.abs(widths[0] - widths[2]) < 1 &&
+            Math.abs(widths[1] / widths[0] - 2) < 0.2
+          ) {
+            this.columnPreset = "1:2:1";
+          } else {
+            this.columnPreset = "custom";
+          }
         }
       } else {
         this.columnPreset = "custom";
@@ -416,48 +440,75 @@ export default {
     // 处理列预设变更
     handlePresetChange(val) {
       this.columnPreset = val;
-      if (val === "none") {
-        // 不分列 - 清除现有的列节点
-        const parent = this.node;
-        // 清空现有子节点
-        parent.children = [];
-        // 触发布局更新
-        this.$root.$emit("layout-updated");
+      
+      // 如果是自定义，显示输入框
+      if (val === "custom") {
+        this.showCustomInput = true;
         return;
-      } else if (val === "custom") {
-        // 自定义列配置
-        this.$emit("add-column", this.node.id);
       } else {
-        // 使用预设列配置
-        // 解析预设比例
-        const ratios = val.split(":");
-        const parent = this.node;
-
-        // 清空现有子节点
-        parent.children = [];
-
-        // 计算总比例
-        const totalRatio = ratios.reduce((sum, r) => sum + parseInt(r), 0);
-
-        // 创建列节点
-        ratios.forEach((ratio) => {
-          const percent = (parseInt(ratio) / totalRatio) * 100;
-          const span = Math.round((parseInt(ratio) / totalRatio) * 10);
-
-          parent.children.push({
-            id: uuidv4(),
-            type: "column",
-            span,
-            percentWidth: `${percent.toFixed(2)}%`,
-            height: "100%",
-            parent: parent.id,
-            children: [],
-          });
-        });
-
-        // 触发布局更新
-        this.$root.$emit("layout-updated");
+        this.showCustomInput = false;
       }
+      
+      // 获取父节点引用
+      const parent = this.node;
+      
+      // 根据选择的预设处理
+      switch (val) {
+        case "none":
+          // 不分列 - 清除现有的列节点
+          parent.children = [];
+          break;
+          
+        default:
+          // 使用预设列配置 (1:1, 1:1:1, 1:2:1, 1:2)
+          this.applyColumnPreset(val, parent);
+          break;
+      }
+      
+      // 触发布局更新
+      this.$root.$emit("layout-updated");
+    },
+    // 处理自定义比例变更
+    handleCustomRatioChange() {
+      // 验证输入格式
+      const ratioPattern = /^\d+(?::\d+)+$/;
+      if (!ratioPattern.test(this.customRatio)) {
+        this.$message.warning("请输入有效的比例格式，如 1:2 或 1:2:1");
+        return;
+      }
+      
+      // 应用自定义比例
+      this.applyColumnPreset(this.customRatio, this.node);
+      
+      // 触发布局更新
+      this.$root.$emit("layout-updated");
+    },
+    // 应用列预设配置
+    applyColumnPreset(preset, parent) {
+      // 解析预设比例
+      const ratios = preset.split(":").map(r => parseInt(r));
+      
+      // 清空现有子节点
+      parent.children = [];
+      
+      // 计算总比例
+      const totalRatio = ratios.reduce((sum, r) => sum + r, 0);
+      
+      // 创建列节点
+      ratios.forEach((ratio) => {
+        const percent = (ratio / totalRatio) * 100;
+        const span = Math.round((ratio / totalRatio) * 10);
+        
+        parent.children.push({
+          id: uuidv4(),
+          type: "column",
+          span,
+          percentWidth: `${percent.toFixed(2)}%`,
+          height: "100%",
+          parent: parent.id,
+          children: [],
+        });
+      });
     },
     // 子节点样式计算
     getChildStyle(child) {

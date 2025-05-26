@@ -3,7 +3,7 @@
     <el-header height="60px" class="editor-header">
       <div class="header-controls">
         <div class="left-area">
-          <h2>新闻门户布局编辑器</h2>
+        <h2>新闻门户布局编辑器</h2>
         </div>
         <div class="right-area">
           <el-button-group class="action-group">
@@ -18,7 +18,7 @@
               >预览</el-button
             >
           </el-button-group>
-
+          
           <el-button-group class="action-group">
             <el-button type="info" icon="el-icon-download" @click="exportLayout"
               >导出</el-button
@@ -63,14 +63,14 @@
             <div class="layout-container">
               <!-- 使用v-for遍历根节点下的所有布局 -->
               <div v-for="node in rootNode.children" :key="node.id">
-                <layout-node
-                  :node="node"
+                <layout-node 
+                  :node="node" 
                   :depth="0"
                   @delete-node="handleDeleteNode"
                   @select-widget="handleSelectWidget"
                   @move-row="handleMoveRow"
                 />
-              </div>
+            </div>
 
               <!-- 快速添加行布局 -->
               <div class="add-layout-controls">
@@ -84,7 +84,7 @@
           </div>
         </template>
       </div>
-    </div>
+                      </div>
 
     <!-- 选择组件对话框 -->
     <widget-selector
@@ -147,7 +147,7 @@ export default {
   computed: {
     ...mapState("column", ["columns"]),
     ...mapState("layout", ["layoutTree"]),
-
+    
     // 获取所有widgets
     widgets() {
       return WidgetRegistry.getDefaultWidgets();
@@ -200,19 +200,19 @@ export default {
   methods: {
     ...mapActions("column", ["fetchColumns", "fetchCategories"]),
     ...mapActions("layout", ["saveLayoutTree", "loadLayoutTree"]),
-
+    
     // 创建根节点
     createRootNode() {
       // 使用UUID创建唯一ID
       const containerId = uuidv4();
       const rowId = uuidv4();
-
+      
       this.rootNode = {
         id: containerId,
         type: "container", // 根节点作为容器
         children: [], // 初始化空的children数组
       };
-
+      
       // 添加一个行布局作为首个子节点
       this.rootNode.children.push({
         id: rowId,
@@ -222,51 +222,51 @@ export default {
         parent: containerId, // 设置父节点
         children: [],
       });
-
+      
       // 保存到vuex
       this.saveLayoutTree(this.rootNode);
     },
-
+    
     // 删除节点
     handleDeleteNode(nodeId) {
       const deleteNode = (node, id) => {
         if (!node || !node.children) return false;
-
+        
         const index = node.children.findIndex((child) => child.id === id);
         if (index >= 0) {
           node.children.splice(index, 1);
           return true;
         }
-
+        
         for (let i = 0; i < node.children.length; i++) {
           if (deleteNode(node.children[i], id)) {
             return true;
           }
         }
-
+        
         return false;
       };
-
+      
       deleteNode(this.rootNode, nodeId);
       this.saveLayoutTree(this.rootNode); // 保存修改后的布局
     },
-
+    
     // 处理节点选择组件
     handleSelectWidget(nodeId) {
       this.selectedNodeId = nodeId;
       this.widgetDialogVisible = true;
     },
-
+    
     // 关闭组件选择对话框
     handleCloseWidgetDialog() {
       this.widgetDialogVisible = false;
       this.selectedNodeId = null;
     },
-
+    
     // 处理组件选择确认
     handleWidgetConfirm(data) {
       const { nodeId, widget, columnId } = data;
-
+      
       // 使用Vue.set确保响应式更新
       const node = this.findNodeById(this.rootNode, nodeId);
       if (node) {
@@ -276,64 +276,64 @@ export default {
           this.$message.error(`组件类型 "${widget.type}" 未注册，无法使用`);
           return;
         }
-
+        
         const column = this.columns.find((c) => c.id === columnId);
-
+        
         // 深拷贝组件对象
         const widgetCopy = JSON.parse(JSON.stringify(widget));
-
+        
         // 确保config中不包含items属性
         if (widgetCopy.config && "items" in widgetCopy.config) {
           console.log("移除组件配置中的items属性:", widgetCopy.config.items);
           delete widgetCopy.config.items;
         }
-
+        
         console.log("保存组件数据(已清理items):", widgetCopy);
-
+        
         // 使用Vue的响应式更新机制
         this.$set(node, "widget", widgetCopy);
         this.$set(node, "columnId", columnId);
         this.$set(node, "columnName", column ? column.name : "");
         this.$set(node, "hasWidget", true); // 明确标记有组件
-
+        
         // 创建新的根节点引用来触发完整更新
         const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
-
+        
         // 更新本地状态
         this.rootNode = null; // 先设为null强制刷新
         this.$nextTick(() => {
           this.rootNode = newRootNode;
-
+          
           // 保存到vuex
           console.log("保存到布局树:", newRootNode);
           this.saveLayoutTree(newRootNode);
-
+          
           // 显示成功消息
           this.$message.success("组件关联成功");
         });
       }
     },
-
+    
     // 通过ID查找节点
     findNodeById(node, id) {
       if (!node) return null;
       if (node.id === id) return node;
-
+      
       if (node.children) {
         for (const child of node.children) {
           const found = this.findNodeById(child, id);
           if (found) return found;
         }
       }
-
+      
       return null;
     },
-
+    
     // 获取组件
     getWidgetComponent(type) {
       return WidgetRegistry.get(type);
     },
-
+    
     // 保存布局
     async saveLayout() {
       this.saving = true;
@@ -347,7 +347,7 @@ export default {
         this.saving = false;
       }
     },
-
+    
     // 重置布局
     resetLayout() {
       this.$confirm("确定要重置布局吗？所有未保存的布局更改将丢失。", "提示", {
@@ -356,13 +356,13 @@ export default {
         type: "warning",
       })
         .then(() => {
-          this.rootNode = null;
-          this.saveLayoutTree(null); // 清空vuex中的布局
+        this.rootNode = null;
+        this.saveLayoutTree(null); // 清空vuex中的布局
           this.$message.success("布局已重置");
         })
         .catch(() => {});
     },
-
+    
     // 处理导出相关操作
     handleExport(command) {
       if (command === "export") {
@@ -391,13 +391,13 @@ export default {
         );
       }
     },
-
+    
     // 导出布局配置
     async exportLayout() {
       try {
         // 使用工具类导出布局
         const success = await LayoutUtils.exportLayoutToFile(this.rootNode);
-
+        
         if (success) {
           this.$message.success("布局配置已导出");
         } else {
@@ -407,12 +407,12 @@ export default {
         this.$message.error("导出失败: " + error.message);
       }
     },
-
+    
     // 打开导入对话框
     openImportDialog() {
       this.importDialogVisible = true;
     },
-
+    
     // 导入布局
     async importLayout(file) {
       // 设置导入中状态
@@ -422,14 +422,14 @@ export default {
         spinner: "el-icon-loading",
         background: "rgba(255, 255, 255, 0.7)",
       });
-
+      
       try {
         // 使用工具类导入布局
         let layoutTree = await LayoutUtils.importLayoutFromFile(file);
-
+        
         // 更新加载提示
         loadingInstance.text = "验证布局数据...";
-
+        
         // 确认导入操作
         try {
           await this.$confirm(
@@ -439,7 +439,7 @@ export default {
               confirmButtonText: "确定导入",
               cancelButtonText: "取消",
               type: "warning",
-              closeOnClickModal: false,
+            closeOnClickModal: false,
               closeOnPressEscape: false,
             }
           );
@@ -449,32 +449,32 @@ export default {
           loadingInstance.close();
           return;
         }
-
+        
         // 使用工具类修复布局样式
         layoutTree = LayoutUtils.fixLayoutNodeStyles(layoutTree);
-
+        
         // 更新加载提示
         loadingInstance.text = "正在应用布局...";
-
+        
         // 确保所有节点的widget和columnId属性正确设置
         this.repairImportedLayout(layoutTree);
-
+        
         // 使用nextTick和setTimeout确保UI完全更新
         this.$nextTick(() => {
           setTimeout(() => {
             try {
               // 更新布局树
               this.rootNode = null; // 先设置为null触发完整重绘
-
+              
               this.$nextTick(() => {
                 this.rootNode = layoutTree;
-
+                
                 // 保存到vuex
                 this.saveLayoutTree(layoutTree);
-
+                
                 // 关闭加载提示
                 loadingInstance.close();
-
+                
                 this.$message.success("布局导入成功");
                 this.importDialogVisible = false;
               });
@@ -488,7 +488,7 @@ export default {
       } catch (error) {
         // 关闭加载提示
         loadingInstance.close();
-
+        
         console.error("导入布局失败:", error);
         this.$message.error({
           message: error.message || "导入失败",
@@ -502,22 +502,22 @@ export default {
     repairImportedLayout(layoutTree) {
       const processNode = (node) => {
         // 检查节点是否有组件
-        if (node.widget) {
+      if (node.widget) {
           const component = WidgetRegistry.get(node.widget.type);
           if (!component) {
             // 组件不存在，清除组件相关属性
             console.warn(
               `导入的布局包含未知组件类型: ${node.widget.type}，已清除`
             );
-            delete node.widget;
+          delete node.widget;
             delete node.columnId;
             delete node.columnName;
-            delete node.hasWidget;
-          } else {
+          delete node.hasWidget;
+        } else {
             // 组件存在，确保hasWidget属性设置
             node.hasWidget = true;
-
-            // 检查关联的栏目是否存在
+          
+          // 检查关联的栏目是否存在
             if (node.columnId) {
               const existingColumn = this.columns.find(
                 (c) => c.id === node.columnId
@@ -529,16 +529,16 @@ export default {
                 );
                 delete node.columnId;
                 delete node.columnName;
-              } else {
-                // 更新栏目名称，确保与当前系统匹配
+            } else {
+              // 更新栏目名称，确保与当前系统匹配
                 node.columnName = existingColumn.name;
               }
             }
-          }
         }
-
-        // 递归处理子节点
-        if (node.children && node.children.length > 0) {
+      }
+      
+      // 递归处理子节点
+      if (node.children && node.children.length > 0) {
           node.children.forEach((child) => processNode(child));
         }
       };
@@ -557,12 +557,12 @@ export default {
         this.$message.warning("布局为空，请先创建布局");
         return;
       }
-
+      
       // 检查布局中是否有组件
       const hasWidgets = this.checkForWidgets(this.rootNode);
       console.log("准备预览，布局中包含组件:", hasWidgets);
       console.log("预览布局树:", JSON.stringify(this.rootNode, null, 2));
-
+      
       this.previewLayoutTree = JSON.parse(JSON.stringify(this.rootNode));
       this.previewDialogVisible = true;
     },
@@ -570,13 +570,13 @@ export default {
     // 检查节点及其子节点中是否有组件
     checkForWidgets(node) {
       if (!node) return false;
-
+      
       // 当前节点有组件
       if (node.widget) {
         console.log("找到组件:", node.widget.name, node.widget.type);
         return true;
       }
-
+      
       // 递归检查子节点
       if (node.children && node.children.length > 0) {
         for (const child of node.children) {
@@ -585,7 +585,7 @@ export default {
           }
         }
       }
-
+      
       return false;
     },
 
@@ -594,21 +594,21 @@ export default {
       // 只处理列节点
       const columnNodes = columns.filter((node) => node.type === "column");
       if (columnNodes.length === 0) return;
-
+      
       // 计算当前span总和
       const totalSpan = columnNodes.reduce(
         (sum, col) => sum + (col.span || 0),
         0
       );
-
+      
       // 如果总和不是10，进行校正
       if (totalSpan !== 10) {
         // 计算校正因子
         const factor = 10 / totalSpan;
-
+        
         // 记录累计校正结果
         let assignedSpan = 0;
-
+        
         // 为每列分配校正后的span值
         for (let i = 0; i < columnNodes.length - 1; i++) {
           const rawSpan = columnNodes[i].span * factor;
@@ -616,7 +616,7 @@ export default {
           columnNodes[i].span = newSpan;
           assignedSpan += newSpan;
         }
-
+        
         // 最后一列应该是10减去前面所有列的span总和
         columnNodes[columnNodes.length - 1].span = 10 - assignedSpan;
       }
@@ -626,20 +626,20 @@ export default {
     updateQuickConfig(config) {
       this.quickRowConfig = config;
     },
-
+    
     // 快速添加行布局
     quickAddRows(config) {
       if (!this.rootNode) {
         this.createRootNode();
       }
-
+      
       if (!this.rootNode.children) {
         this.rootNode.children = [];
       }
-
+      
       // 获取行数
       const rowCount = config.rows || 1;
-
+      
       // 创建行
       for (let i = 0; i < rowCount; i++) {
         const rowNode = {
@@ -650,7 +650,7 @@ export default {
           parent: this.rootNode.id,
           children: [],
         };
-
+        
         // 如果需要添加列
         if (config.columnPreset !== "none" && config.columnWidths.length > 0) {
           // 获取列配置
@@ -662,14 +662,14 @@ export default {
               : config.columnPreset
                   .split(":")
                   .map((r) => parseInt(r.trim()) || 1);
-
+          
           const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
-
+          
           // 创建列
           columnRatios.forEach((ratio, index) => {
             const percent = config.columnWidths[index];
             const span = Math.round((ratio / totalRatio) * 10);
-
+            
             rowNode.children.push({
               id: uuidv4(),
               type: "column",
@@ -680,34 +680,34 @@ export default {
               children: [],
             });
           });
-
+          
           // 确保span总和为10
           this.adjustColumnSpans(rowNode.children);
         }
-
+        
         // 添加行到根节点
         this.rootNode.children.push(rowNode);
       }
-
+      
       // 保存布局
       this.saveLayoutTree(this.rootNode);
-
+      
       // 显示提示
       this.$message.success(`已添加${rowCount}行布局`);
     },
-
+    
     // 处理行移动
     handleMoveRow(data) {
       const { id, direction } = data;
-
+      
       // 找到行节点及其父节点
       const findNodeWithParent = (nodeId, tree, parent = null) => {
         if (!tree) return { node: null, parent: null };
-
+        
         if (tree.id === nodeId) {
           return { node: tree, parent };
         }
-
+        
         if (tree.children && tree.children.length > 0) {
           for (const child of tree.children) {
             const result = findNodeWithParent(child.id, child, tree);
@@ -716,27 +716,27 @@ export default {
             }
           }
         }
-
+        
         return { node: null, parent: null };
       };
-
+      
       const { node, parent } = findNodeWithParent(id, this.rootNode);
-
+      
       if (!node || !parent || node.type !== "row") {
         this.$message.warning("无法移动：找不到行节点或父节点");
         return;
       }
-
+      
       // 找到节点在父节点children中的索引
       const index = parent.children.findIndex((child) => child.id === id);
       if (index === -1) {
         this.$message.warning("无法移动：节点不在父节点的子节点列表中");
         return;
       }
-
+      
       // 计算目标索引
       const targetIndex = direction === "up" ? index - 1 : index + 1;
-
+      
       // 检查边界
       if (targetIndex < 0 || targetIndex >= parent.children.length) {
         this.$message.warning(
@@ -746,26 +746,26 @@ export default {
         );
         return;
       }
-
+      
       // 交换位置
       const temp = parent.children[index];
       parent.children[index] = parent.children[targetIndex];
       parent.children[targetIndex] = temp;
-
+      
       // 创建新的根节点引用来触发完整更新
       const newRootNode = JSON.parse(JSON.stringify(this.rootNode));
-
+      
       // 更新本地状态
       this.rootNode = null; // 先设为null强制刷新
       this.$nextTick(() => {
         this.rootNode = newRootNode;
-
+        
         // 保存修改后的布局
         this.saveLayoutTree(this.rootNode);
         this.$message.success(`行已${direction === "up" ? "上移" : "下移"}`);
       });
     },
-
+    
     // 遍历树并标记有组件的节点
     markNodesWithComponents(node) {
       if (!node) return;
@@ -812,11 +812,11 @@ export default {
         flex-shrink: 0;
         margin-right: 10px;
 
-        h2 {
-          margin: 0;
+      h2 {
+        margin: 0;
           font-size: 18px;
-          color: #303133;
-          font-weight: 500;
+        color: #303133;
+        font-weight: 500;
           white-space: nowrap;
         }
       }
@@ -829,10 +829,10 @@ export default {
         overflow-x: auto;
         max-width: calc(100% - 250px);
         justify-content: flex-end;
-
+        
         .action-group {
           flex-shrink: 0;
-
+          
           .el-button span {
             @media (max-width: 768px) {
               display: none;
@@ -874,14 +874,14 @@ export default {
       color: #909399;
     }
   }
-
+  
   .layout-root {
     background-color: #fcfcfc;
     border-radius: 8px;
     padding: 24px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 
-    .layout-container {
+  .layout-container {
       .add-layout-controls {
         margin-top: 24px;
         padding: 24px;
