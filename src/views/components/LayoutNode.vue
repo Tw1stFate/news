@@ -118,7 +118,7 @@
     </div>
 
     <!-- 节点内容 -->
-    <div class="node-content">
+    <div class="node-content" :style="nodeContentStyle">
       <!-- 叶子节点内容 -->
       <div v-if="isLeafNode" class="node-widget" v-show="shouldShowContent">
         <div v-if="node.widget" class="widget-preview">
@@ -264,13 +264,6 @@ export default {
     nodeStyle() {
       const style = {};
 
-      // 设置高度
-      if (this.node.height) {
-        style.height = this.node.height.match(/^\d+$/)
-          ? `${this.node.height}px`
-          : this.node.height;
-      }
-
       // 设置宽度
       if (this.node.width) {
         style.width = this.node.width;
@@ -316,6 +309,23 @@ export default {
         overflow: "hidden",
       };
 
+      return style;
+    },
+    // 节点内容样式
+    nodeContentStyle() {
+      const style = {};
+      
+      // 设置内容区域高度
+      if (this.node.height) {
+        style.height = this.node.height.match(/^\d+$/)
+          ? `${this.node.height}px`
+          : this.node.height;
+        style.overflow = "auto"; // 当设置了高度时确保内容可滚动
+        style.minHeight = "0"; // 当设置了高度时，最小高度应该为0，允许自定义任意高度
+      } else {
+        style.minHeight = "80px"; // 当没有设置高度时，使用默认最小高度
+      }
+      
       return style;
     },
   },
@@ -491,17 +501,8 @@ export default {
   background-color: #fff;
   box-sizing: border-box;
   overflow: hidden;
-
-  // 确保高度可以生效
-  &[style*="height"] {
-    display: flex;
-    flex-direction: column;
-
-    .node-content {
-      flex: 1;
-      overflow: auto;
-    }
-  }
+  display: flex;
+  flex-direction: column;
 
   &.is-hovered {
     border-color: #409eff;
@@ -643,10 +644,15 @@ export default {
 
   .node-content {
     padding: 8px;
-    min-height: 80px;
     display: block;
     opacity: 1;
     visibility: visible;
+    flex: 1;
+    overflow: auto;
+
+    &[style*="height"] {
+      flex: none; /* 当高度明确设置时，不要使用flex来拉伸 */
+    }
 
     .empty-node {
       display: flex;
