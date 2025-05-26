@@ -111,6 +111,7 @@ import WidgetRegistry from "@/services/widget-registry";
 import api from "@/services/api";
 import { v4 as uuidv4 } from "uuid";
 import LayoutUtils from "@/utils/layout-utils";
+import { generateColumnNodes } from "@/utils/column-preset";
 import LayoutNode from "@/views/components/LayoutNode.vue";
 import WidgetSelector from "@/views/WidgetSelector.vue";
 import PreviewDialog from "@/views/components/PreviewDialog.vue";
@@ -654,32 +655,10 @@ export default {
         // 如果需要添加列
         if (config.columnPreset !== "none" && config.columnWidths.length > 0) {
           // 获取列配置
-          const columnRatios =
-            config.columnPreset === "custom"
-              ? config.customRatio
-                  .split(":")
-                  .map((r) => parseInt(r.trim()) || 1)
-              : config.columnPreset
-                  .split(":")
-                  .map((r) => parseInt(r.trim()) || 1);
+          const preset = config.columnPreset === "custom" ? config.customRatio : config.columnPreset;
           
-          const totalRatio = columnRatios.reduce((sum, r) => sum + r, 0);
-          
-          // 创建列
-          columnRatios.forEach((ratio, index) => {
-            const percent = config.columnWidths[index];
-            const span = Math.round((ratio / totalRatio) * 10);
-            
-            rowNode.children.push({
-              id: uuidv4(),
-              type: "column",
-              span: span,
-              percentWidth: `${percent}%`,
-              height: "100%",
-              parent: rowNode.id,
-              children: [],
-            });
-          });
+          // 使用工具类生成列节点
+          rowNode.children = generateColumnNodes(preset, rowNode.id, uuidv4);
           
           // 确保span总和为10
           this.adjustColumnSpans(rowNode.children);

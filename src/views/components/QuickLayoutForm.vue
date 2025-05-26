@@ -46,12 +46,12 @@
             style="width: 100%"
             @change="handlePresetChange"
           >
-            <el-option label="不分列" value="none"></el-option>
-            <el-option label="等宽两列 (1:1)" value="1:1"></el-option>
-            <el-option label="等宽三列 (1:1:1)" value="1:1:1"></el-option>
-            <el-option label="三列 (1:2:1)" value="1:2:1"></el-option>
-            <el-option label="两列 (1:2)" value="1:2"></el-option>
-            <el-option label="自定义" value="custom"></el-option>
+            <el-option 
+              v-for="option in presetOptions" 
+              :key="option.value" 
+              :label="option.label" 
+              :value="option.value">
+            </el-option>
           </el-select>
         </div>
       </div>
@@ -84,6 +84,8 @@
 </template>
 
 <script>
+import { PRESET_OPTIONS, calculateColumnWidths, validateRatio } from "@/utils/column-preset";
+
 export default {
   name: "QuickLayoutForm",
   props: {
@@ -107,6 +109,7 @@ export default {
         height: "",
         columnWidths: [],
       },
+      presetOptions: PRESET_OPTIONS,
     };
   },
   created() {
@@ -140,32 +143,23 @@ export default {
       this.$emit("update:config", this.config);
     },
     handleCustomRatioChange() {
+      // 验证输入格式
+      if (!validateRatio(this.config.customRatio)) {
+        this.$message.warning("请输入有效的比例格式，如 1:2 或 1:2:1");
+        return;
+      }
+      
       // 当自定义比例变化时重新计算宽度
       this.calculateColumnWidths(this.config.customRatio);
+      
+      // 显示成功提示
+      this.$message.success(`已设置列比例为 ${this.config.customRatio}`);
+      
       this.$emit("update:config", this.config);
     },
     calculateColumnWidths(ratioString) {
-      if (!ratioString || ratioString === "none") {
-        this.config.columnWidths = [];
-        return;
-      }
-
-      // 解析比例
-      const ratios = ratioString.split(":").map((r) => parseInt(r.trim()) || 1);
-      const total = ratios.reduce((sum, r) => sum + r, 0);
-      const widths = [];
-
-      // 计算百分比宽度
-      let sum = 0;
-      for (let i = 0; i < ratios.length - 1; i++) {
-        const width = parseFloat(((ratios[i] / total) * 100).toFixed(2));
-        widths.push(width);
-        sum += width;
-      }
-
-      // 最后一列计算，避免小数误差
-      widths.push(parseFloat((100 - sum).toFixed(2)));
-      this.config.columnWidths = widths;
+      // 使用工具类计算列宽度
+      this.config.columnWidths = calculateColumnWidths(ratioString);
     },
     addRows() {
       // 触发添加行事件
