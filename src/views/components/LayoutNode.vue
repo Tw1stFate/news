@@ -219,8 +219,6 @@ export default {
   data() {
     return {
       isHovered: false,
-      // 如果是叶子节点，强制显示
-      forceVisible: !this.node.children || this.node.children.length === 0,
       // 添加列配置下拉选项
       columnPreset: "none",
     };
@@ -312,12 +310,6 @@ export default {
     handleMouseLeave() {
       this.isHovered = false;
     },
-    addRow() {
-      this.$emit("add-row", this.node.id);
-    },
-    addColumn() {
-      this.$emit("add-column", this.node.id);
-    },
     deleteNode() {
       this.$emit("delete-node", this.node.id);
     },
@@ -353,23 +345,6 @@ export default {
     moveRowDown() {
       this.$emit("move-row", { id: this.node.id, direction: "down" });
     },
-    showLayoutInfo() {
-      const { type, span, height, percentWidth } = this.node;
-      let message = "";
-
-      if (type === "row") {
-        message = `行布局: 宽度占满(100%)${
-          height ? `，高度: ${height}` : "，高度自适应"
-        }`;
-      } else if (type === "column") {
-        const widthText = percentWidth || `${Math.round((span || 1) * 10)}%`;
-        message = `列布局: 宽度 ${widthText}${
-          height ? `，高度: ${height}` : "，高度占满"
-        }`;
-      }
-
-      this.$root.$message.info(message);
-    },
     // 获取组件实例
     getWidgetComponent(type) {
       return WidgetRegistry.get(type);
@@ -396,7 +371,7 @@ export default {
 
       // 根据列数和比例判断预设类型
       const count = columnChildren.length;
-
+      
       // 检查是否为等宽列
       const isEqualWidth = columnChildren.every((col) => {
         return col.percentWidth === columnChildren[0].percentWidth;
@@ -451,7 +426,7 @@ export default {
         return;
       } else if (val === "custom") {
         // 自定义列配置
-        this.addColumn();
+        this.$emit("add-column", this.node.id);
       } else {
         // 使用预设列配置
         // 解析预设比例
@@ -544,21 +519,13 @@ export default {
     background-color: #ecf5ff;
   }
 
-  // 不同深度层级颜色区分
+  // 不同深度层级颜色区分 - 简化为两种深度
   &.depth-0 {
     background-color: #f6f8fc;
   }
 
-  &.depth-1 {
+  &.depth-12 {
     background-color: #edf2fa;
-  }
-
-  &.depth-2 {
-    background-color: #e4ecf7;
-  }
-
-  &.depth-3 {
-    background-color: #dbe6f4;
   }
 
   &.node-row {
@@ -611,11 +578,6 @@ export default {
     }
   }
 
-  &.node-container {
-    border: none;
-    background-color: transparent;
-  }
-
   .node-header {
     display: flex;
     justify-content: space-between;
@@ -637,12 +599,6 @@ export default {
         font-size: 12px;
         color: #909399;
         font-style: italic;
-      }
-
-      .move-buttons {
-        margin-left: 15px;
-        display: flex;
-        align-items: center;
       }
 
       &.column-title {
@@ -699,9 +655,9 @@ export default {
   .node-content {
     padding: 8px;
     min-height: 80px;
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+    display: block;
+    opacity: 1;
+    visibility: visible;
 
     .empty-node {
       display: flex;
@@ -735,9 +691,7 @@ export default {
     }
 
     .node-widget {
-      display: block !important;
-      opacity: 1 !important;
-      visibility: visible !important;
+      display: block;
       padding: 0;
       margin: 0;
       background-color: #fff;
@@ -745,9 +699,7 @@ export default {
       position: relative;
 
       .widget-preview {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
+        display: block;
         min-height: 100px;
         background-color: #fff;
         border-radius: 4px;
@@ -758,7 +710,7 @@ export default {
         .preview-component {
           width: 100%;
           height: 100%;
-          display: block !important;
+          display: block;
         }
 
         .widget-overlay {
