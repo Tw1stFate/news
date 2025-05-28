@@ -165,6 +165,32 @@ const mockHotNews = mockNewsData.general.slice(0, 10).map(news => ({
 // 模拟API服务
 const api = {
   /**
+   * 获取栏目列表
+   * @returns {Promise<Array>} 栏目列表
+   */
+  getColumns() {
+    // 模拟栏目数据
+    const mockColumns = [
+      { id: 'headlines', name: '头条新闻' },
+      { id: 'domestic', name: '国内新闻' },
+      { id: 'international', name: '国际新闻' },
+      { id: 'finance', name: '财经新闻' },
+      { id: 'technology', name: '科技新闻' },
+      { id: 'sports', name: '体育新闻' },
+      { id: 'entertainment', name: '娱乐新闻' },
+      { id: 'lifestyle', name: '生活资讯' },
+      { id: 'culture', name: '文化教育' }
+    ];
+    
+    // 模拟API延迟
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(mockColumns);
+      }, 300);
+    });
+  },
+
+  /**
    * 获取分行列表
    * @returns {Promise<Array>}
    */
