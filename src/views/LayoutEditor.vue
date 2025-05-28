@@ -178,7 +178,6 @@ export default {
   created() {
     // 加载栏目数据
     this.fetchColumns();
-    this.fetchCategories();
 
     // 尝试从vuex加载已保存的布局
     this.loadLayoutTree().then((layoutTree) => {
@@ -199,7 +198,7 @@ export default {
     this.$root.$off("layout-updated");
   },
   methods: {
-    ...mapActions("column", ["fetchColumns", "fetchCategories"]),
+    ...mapActions("column", ["fetchColumns"]),
     ...mapActions("layout", ["saveLayoutTree", "loadLayoutTree"]),
     
     // 创建根节点
