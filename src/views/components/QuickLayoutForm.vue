@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import { PRESET_OPTIONS, calculateColumnWidths, validateRatio } from "@/utils/column-preset";
+import { PRESET_OPTIONS, calculateColumnWidths, validateRatio } from "../../utils/column-preset";
 
 export default {
   name: "QuickLayoutForm",

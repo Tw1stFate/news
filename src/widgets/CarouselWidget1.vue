@@ -110,7 +110,7 @@
 </template>
 
 <script>
-import api from "@/services/api";
+import api from "../services/api";
 import { mapState } from "vuex";
 
 export default {

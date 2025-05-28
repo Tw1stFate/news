@@ -107,16 +107,16 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
-import WidgetRegistry from "@/services/widget-registry";
-import api from "@/services/api";
+import WidgetRegistry from "../services/widget-registry";
+import api from "../services/api";
 import { v4 as uuidv4 } from "uuid";
-import LayoutUtils from "@/utils/layout-utils";
-import { generateColumnNodes } from "@/utils/column-preset";
-import LayoutNode from "@/views/components/LayoutNode.vue";
-import WidgetSelector from "@/views/WidgetSelector.vue";
-import PreviewDialog from "@/views/components/PreviewDialog.vue";
-import ImportDialog from "@/views/components/ImportDialog.vue";
-import QuickLayoutForm from "@/views/components/QuickLayoutForm.vue";
+import LayoutUtils from "../utils/layout-utils";
+import { generateColumnNodes } from "../utils/column-preset";
+import LayoutNode from "./components/LayoutNode.vue";
+import WidgetSelector from "./WidgetSelector.vue";
+import PreviewDialog from "./components/PreviewDialog.vue";
+import ImportDialog from "./components/ImportDialog.vue";
+import QuickLayoutForm from "./components/QuickLayoutForm.vue";
 
 export default {
   name: "LayoutEditor",

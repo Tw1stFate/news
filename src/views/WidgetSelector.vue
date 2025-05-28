@@ -78,7 +78,7 @@
 
 <script>
 import { mapState } from "vuex";
-import WidgetRegistry from "@/services/widget-registry";
+import WidgetRegistry from "../services/widget-registry";
 
 export default {
   name: "WidgetSelector",

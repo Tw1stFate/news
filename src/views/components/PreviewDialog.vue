@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import WidgetRegistry from "@/services/widget-registry";
+import WidgetRegistry from "../../services/widget-registry";
 
 // 预览行组件
 const PreviewRow = {

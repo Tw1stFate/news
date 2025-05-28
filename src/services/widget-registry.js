@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-import CarouselWidget1 from '@/widgets/CarouselWidget1.vue';
-import CarouselWidget2 from '@/widgets/CarouselWidget2.vue';
-import CarouselWidget3 from '@/widgets/CarouselWidget3.vue';
-import NewsListWidget1 from '@/widgets/NewsListWidget1.vue';
-import NewsListWidget2 from '@/widgets/NewsListWidget2.vue';
-import NewsListWidget3 from '@/widgets/NewsListWidget3.vue';
-import ImageNewsWidget from '@/widgets/ImageNewsWidget.vue';
-import NavBarWidget from '@/widgets/NavBarWidget.vue';
+import CarouselWidget1 from '../widgets/CarouselWidget1.vue';
+import CarouselWidget2 from '../widgets/CarouselWidget2.vue';
+import CarouselWidget3 from '../widgets/CarouselWidget3.vue';
+import NewsListWidget1 from '../widgets/NewsListWidget1.vue';
+import NewsListWidget2 from '../widgets/NewsListWidget2.vue';
+import NewsListWidget3 from '../widgets/NewsListWidget3.vue';
+import ImageNewsWidget from '../widgets/ImageNewsWidget.vue';
+import NavBarWidget from '../widgets/NavBarWidget.vue';
 
 // mock 数据
 const carouselData = [

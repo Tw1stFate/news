@@ -1,5 +1,5 @@
 // 栏目管理模块
-import api from '@/services/api';
+import api from '../../services/api';
 
 const state = {
   columns: []

@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
-import LayoutEditor from '@/views/LayoutEditor.vue';
+import LayoutEditor from '../views/LayoutEditor.vue';
 
 Vue.use(VueRouter);
 

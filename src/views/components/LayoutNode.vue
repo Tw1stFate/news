@@ -205,7 +205,7 @@
 
 <script>
 import { v4 as uuidv4 } from "uuid";
-import WidgetRegistry from "@/services/widget-registry";
+import WidgetRegistry from "../../services/widget-registry";
 import { 
   PRESET_OPTIONS, 
   validateRatio, 
