@@ -148,11 +148,6 @@ export default {
   computed: {
     ...mapState("column", ["columns"]),
     ...mapState("layout", ["layoutTree"]),
-    
-    // 获取所有widgets
-    widgets() {
-      return WidgetRegistry.getDefaultWidgets();
-    },
   },
   watch: {
     // 监听vuex中的布局树变化

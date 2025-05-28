@@ -8,80 +8,20 @@ import NewsListWidget3 from '../widgets/NewsListWidget3.vue';
 import ImageNewsWidget from '../widgets/ImageNewsWidget.vue';
 import NavBarWidget from '../widgets/NavBarWidget.vue';
 
-// mock 数据
-const carouselData = [
-  {
-    id: 1,
-    title: '中国航天事业取得重大突破',
-    image: 'https://picsum.photos/800/400?random=1',
-    thumbnail: 'https://picsum.photos/800/400?random=1&w=120&h=80',
-    date: '2024-01-15',
-    link: '#',
-    summary: '近日，我国航天事业再次取得重大突破，成功发射新一代运载火箭，这将为我国空间站计划提供有力支持。'
-  },
-  {
-    id: 2,
-    title: '第二届数字中国建设峰会开幕',
-    image: 'https://picsum.photos/800/400?random=2',
-    thumbnail: 'https://picsum.photos/800/400?random=2&w=120&h=80',
-    date: '2024-01-15',
-    link: '#',
-    summary: '第二届数字中国建设峰会在福建福州开幕，来自全国各地的专家学者和企业家共同探讨数字经济发展前景。'
-  },
-  {
-    id: 3,
-    title: '2023世界互联网大会举行',
-    image: 'https://picsum.photos/800/400?random=3',
-    thumbnail: 'https://picsum.photos/800/400?random=3&w=120&h=80',
-    date: '2024-01-15',
-    link: '#',
-    summary: '以"数字赋能未来，合作创造机遇"为主题的2023世界互联网大会在浙江乌镇举行，聚焦全球数字合作。'
-  },
-  {
-    id: 4,
-    title: '科技创新助力经济高质量发展',
-    image: 'https://picsum.photos/800/400?random=4',
-    thumbnail: 'https://picsum.photos/800/400?random=4&w=120&h=80',
-    date: '2024-01-15',
-    link: '#',
-    summary: '国务院发布《关于促进科技创新支撑引领经济高质量发展的若干政策措施》，从多个方面支持科技创新。'
-  },
-  {
-    id: 5,
-    title: '新能源汽车产业蓬勃发展',
-    image: 'https://picsum.photos/800/400?random=5',
-    thumbnail: 'https://picsum.photos/800/400?random=5&w=120&h=80',
-    date: '2024-01-15',
-    link: '#',
-    summary: '截至2023年底，我国新能源汽车保有量超过1300万辆，产业链各环节技术水平显著提升，市场竞争力不断增强。'
-  }
-];
-
-// 导航栏数据
-const navBarData = {
-  menuItems: [
-    { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
-    { label: '总行门户', url: '/', target: '_self', active: true },
-    { label: '分行门户', dropdown: true, active: false },
-    { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
-    { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
-  ]
-};
-
-const mockData = {
-  carousel: carouselData,
-  headline: carouselData[0],
-  newsList: carouselData,
-  imageNews: carouselData,
-  hotNews: carouselData,
-  navBar: navBarData
+// 组件分类常量
+export const WIDGET_CATEGORIES = {
+  CAROUSEL: '轮播图',
+  NEWS_LIST: '新闻列表',
+  IMAGE_NEWS: '图片新闻',
+  RANKING: '排行榜',
+  NAV_BAR: '导航栏',
+  OTHER: '其他组件'
 };
 
 // 注册组件类型
 const widgetTypes = {
   'carousel-1': {
     name: '轮播图样式1',
-    icon: 'el-icon-picture',
     component: CarouselWidget1,
     defaultConfig: {
       height: 300,
@@ -91,88 +31,95 @@ const widgetTypes = {
       activeIndicatorWidth: 20,
       showTitle: true,
       titlePosition: 'bottom-right',
-      categoryId: 'headlines', // 关联栏目ID
+      categoryId: '', // 关联栏目ID
       maxItems: 5              // 最大加载数量
-    }
+    },
+    description: '自动播放大图展示',
+    category: WIDGET_CATEGORIES.CAROUSEL
   },
   'carousel-2': {
     name: '轮播图样式2',
-    icon: 'el-icon-picture',
     component: CarouselWidget2,
     defaultConfig: {
       height: 360,
       autoplay: true,
       interval: 5000,
       showTitle: true,
-      categoryId: 'headlines', // 关联栏目ID
+      categoryId: '', // 关联栏目ID
       maxItems: 5              // 最大加载数量
-    }
+    },
+    description: '手动切换，缩略图导航',
+    category: WIDGET_CATEGORIES.CAROUSEL
   },
   'carousel-3': {
     name: '轮播图样式3',
-    icon: 'el-icon-picture',
     component: CarouselWidget3,
     defaultConfig: {
       height: 360,
       autoplay: true,
       interval: 5000,
       showDate: true,
-      categoryId: 'headlines', // 关联栏目ID
+      categoryId: '', // 关联栏目ID
       maxItems: 5              // 最大加载数量
-    }
+    },
+    description: '左图右文，标题列表',
+    category: WIDGET_CATEGORIES.CAROUSEL
   },
   'news-list-1': {
     name: '列表样式1',
-    icon: 'el-icon-document',
     component: NewsListWidget1,
     defaultConfig: {
       height: 400,
       title: '党建引领',
       count: 6,
       showDate: true,
-      categoryId: 'domestic',  // 关联栏目ID
+      categoryId: '',  // 关联栏目ID
       maxItems: 6              // 最大加载数量
-    }
+    },
+    description: '带项目符号的标题列表',
+    category: WIDGET_CATEGORIES.NEWS_LIST
   },
   'news-list-2': {
     name: '列表样式2',
-    icon: 'el-icon-document',
     component: NewsListWidget2,
     defaultConfig: {
       height: 330,
       title: '行务要闻',
       count: 7,
       showDate: true,
-      categoryId: 'domestic',  // 关联栏目ID
+      categoryId: '',  // 关联栏目ID
       maxItems: 7              // 最大加载数量
-    }
+    },
+    description: '简洁标题日期列表',
+    category: WIDGET_CATEGORIES.NEWS_LIST
   },
   'news-list-3': {
     name: '列表样式3',
-    icon: 'el-icon-document',
     component: NewsListWidget3,
     defaultConfig: {
       height: 400,
       title: '双轻业务',
       count: 4,
-      categoryId: 'finance',   // 关联栏目ID
+      categoryId: '',   // 关联栏目ID
       maxItems: 4              // 最大加载数量
-    }
+    },
+    description: '图文列表',
+    category: WIDGET_CATEGORIES.NEWS_LIST
   },
   'image-news': {
     name: '图片新闻',
-    icon: 'el-icon-picture-outline',
     component: ImageNewsWidget,
     defaultConfig: {
       layout: 'grid',
       count: 6,
-      categoryId: 'lifestyle',  // 关联栏目ID
+      categoryId: '',  // 关联栏目ID
       maxItems: 6               // 最大加载数量
-    }
+    },
+    description: '网格布局',
+    category: WIDGET_CATEGORIES.IMAGE_NEWS
   },
   'nav-bar': {
     name: '导航栏',
-    icon: 'el-icon-menu',
     component: NavBarWidget,
     defaultConfig: {
       logoUrl: 'https://picsum.photos/200/60?random=1',
@@ -184,154 +131,21 @@ const widgetTypes = {
         { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
         { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
       ]
-    }
+    },
+    description: '导航栏样式1',
+    category: WIDGET_CATEGORIES.NAV_BAR
   }
 };
-
-// 预设的栏目样式
-const defaultWidgets = [
-  {
-    name: '轮播图样式1',
-    type: 'carousel-1',
-    description: '自动播放大图展示',
-    category: '轮播图',
-    config: {
-      height: 300,
-      autoplay: true,
-      interval: 5000,
-      indicatorPosition: 'bottom-left',
-      activeIndicatorWidth: 20,
-      showTitle: true,
-      titlePosition: 'bottom-right',
-      categoryId: 'headlines',
-      maxItems: 5
-    }
-  },
-  {
-    name: '轮播图样式2',
-    type: 'carousel-2',
-    description: '手动切换，缩略图导航',
-    category: '轮播图',
-    config: {
-      height: 360,
-      autoplay: true,
-      interval: 5000,
-      showTitle: true,
-      categoryId: 'headlines',
-      maxItems: 5
-    }
-  },
-  {
-    name: '轮播图样式3',
-    type: 'carousel-3',
-    description: '左图右文，标题列表',
-    category: '轮播图',
-    config: {
-      height: 360,
-      autoplay: true,
-      interval: 5000,
-      showDate: true,
-      categoryId: 'headlines',
-      maxItems: 5
-    }
-  },
-  {
-    name: '列表样式1',
-    type: 'news-list-1',
-    description: '带项目符号的标题列表',
-    category: '新闻列表',
-    config: {
-      height: 400,
-      title: '党建引领',
-      count: 6,
-      showDate: true,
-      categoryId: 'domestic',
-      maxItems: 6
-    }
-  },
-  {
-    name: '列表样式2',
-    type: 'news-list-2',
-    description: '简洁标题日期列表',
-    category: '新闻列表',
-    config: {
-      height: 330,
-      title: '行务要闻',
-      count: 7,
-      showDate: true,
-      categoryId: 'domestic',
-      maxItems: 7
-    }
-  },
-  {
-    name: '列表样式3',
-    type: 'news-list-3',
-    description: '图文列表',
-    category: '新闻列表',
-    config: {
-      height: 400,
-      title: '双轻业务',
-      count: 4,
-      categoryId: 'finance',
-      maxItems: 4
-    }
-  },
-  {
-    name: '图片样式1',
-    type: 'image-news',
-    description: '网格布局',
-    category: '图片新闻',
-    config: {
-      height: 360,
-      layout: 'grid',
-      count: 6,
-      categoryId: 'lifestyle',
-      maxItems: 6
-    }
-  },
-  {
-    name: '图片样式2',
-    type: 'image-news',
-    description: '瀑布流布局',
-    category: '图片新闻',
-    config: {
-      height: 400,
-      layout: 'waterfall',
-      count: 6,
-      categoryId: 'culture',
-      maxItems: 6
-    }
-  },
-  {
-    name: '导航栏样式1',
-    type: 'nav-bar',
-    description: '导航栏样式1',
-    category: '导航栏',
-    config: {
-      logoUrl: 'https://picsum.photos/200/60?random=1',
-      showSearch: true,
-      menuItems: [
-        { label: '集团门户', url: 'https://www.example.com/group', target: '_blank', active: false },
-        { label: '总行门户', url: '/', target: '_self', active: true },
-        { label: '分行门户', dropdown: true, active: false },
-        { label: '广议', url: 'https://www.example.com/guangyi', target: '_blank', active: false },
-        { label: '采购公告', url: 'https://www.example.com/procurement', target: '_blank', active: false }
-      ]
-    }
-  }
-];
 
 class WidgetRegistry {
   constructor() {
     this.types = widgetTypes;
-    this.defaultWidgets = defaultWidgets;
   }
 
   getTypes() {
     return Object.entries(this.types).map(([type, config]) => ({
       type,
-      name: config.name,
-      icon: config.icon
+      name: config.name
     }));
   }
 
@@ -344,19 +158,19 @@ class WidgetRegistry {
   }
 
   getDefaultWidgets() {
-    return this.defaultWidgets;
+    // 直接从widgetTypes生成组件列表
+    return Object.entries(this.types).map(([type, config]) => ({
+      name: config.name,
+      type: type,
+      description: config.description || '暂无描述',
+      category: config.category || WIDGET_CATEGORIES.OTHER,
+      config: {...config.defaultConfig}
+    }));
   }
 
   getCategories() {
-    // 组件分类
-    return [
-      '轮播图',
-      '新闻列表',
-      '图片新闻',
-      '排行榜',
-      '导航栏',
-      '其他组件'
-    ];
+    // 返回所有预定义的组件分类
+    return Object.values(WIDGET_CATEGORIES);
   }
 
   register(type, config) {
