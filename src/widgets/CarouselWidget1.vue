@@ -112,6 +112,7 @@
 <script>
 import api from "../services/api";
 import { mapState } from "vuex";
+import { mockNewsData } from "../services/mock";
 
 export default {
   name: "CarouselWidget1",
@@ -156,8 +157,6 @@ export default {
     },
   },
   created() {
-    console.log("=======CarouselWidget1 created");
-
     // 确保有栏目数据
     if (this.columns.length === 0) {
       this.$store.dispatch("column/fetchColumns");
@@ -165,18 +164,21 @@ export default {
 
     this.fetchData();
   },
-  beforeDestroy() {
-    // Component cleanup
-  },
   methods: {
     async fetchData() {
       this.loading = true;
       try {
-        // 从API获取轮播数据
-        this.items = await api.getNewsByColumn(
-          this.config.columnId || "headlines",
-          this.config.maxItems || 5
-        );
+        // 如果columnId为空，使用mock数据
+        if (!this.config.columnId) {
+          // 使用简化后的mock数据
+          this.items = mockNewsData.slice(0, this.config.maxItems || 5);
+        } else {
+          // 从API获取轮播数据
+          this.items = await api.getNewsByColumn(
+            this.config.columnId,
+            this.config.maxItems || 5
+          );
+        }
       } catch (error) {
         console.error("获取轮播数据失败:", error);
         this.items = [];
@@ -210,9 +212,6 @@ export default {
       if (typeof this.configCallback === "function") {
         this.configCallback(this.tempConfig);
       }
-
-      // 更新本地配置
-      this.config = JSON.parse(JSON.stringify(this.tempConfig));
 
       // 关闭对话框
       this.configDialogVisible = false;

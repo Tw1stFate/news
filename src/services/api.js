@@ -35,24 +35,18 @@ const api = {
    * @returns {Promise<Array>} 新闻列表
    */
   getNewsByColumn(columnId, limit = 5) {
-    // 定义栏目ID与模拟数据的映射关系
-    const columnMap = {
-      'headlines': mockNewsData.general,
-      'trending': mockNewsData.general.slice().sort(() => 0.5 - Math.random()), // 随机排序
-      'social': mockNewsData.entertainment,
-      'international': mockNewsData.general.slice(3, 7),
-      'technology': mockNewsData.technology,
-      'sports': mockNewsData.sports,
-      'entertainment': mockNewsData.entertainment
-    };
-    
-    // 获取对应栏目的数据，如果栏目不存在则返回通用新闻
-    const newsData = columnMap[columnId] || mockNewsData.general;
+    // 简化后的数据处理 - 所有栏目都使用同一个数据源
+    // 可以根据不同的栏目ID来随机排序或筛选数据，以模拟不同栏目的内容
     
     // 模拟API延迟
     return new Promise(resolve => {
       setTimeout(() => {
-        resolve(newsData.slice(0, limit));
+        // 随机打乱数组顺序，模拟不同栏目有不同内容
+        const shuffled = columnId ? 
+          [...mockNewsData].sort(() => 0.5 - Math.random()) : 
+          mockNewsData;
+        
+        resolve(shuffled.slice(0, limit));
       }, 300);
     });
   },
