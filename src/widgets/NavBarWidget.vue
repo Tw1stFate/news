@@ -2,8 +2,8 @@
   <div class="nav-bar-widget">
     <div class="nav-container">
       <!-- 左侧Logo区域 -->
-      <div class="logo-area" v-if="config.logoUrl">
-        <img :src="config.logoUrl" alt="Logo" class="logo-image" />
+      <div class="logo-area">
+        <img src="../assets/logo.png" alt="Logo" class="logo-image" />
       </div>
 
       <!-- 中间导航菜单 -->
@@ -74,13 +74,6 @@
       @closed="handleDialogClosed"
     >
       <el-form :model="tempConfig" label-width="100px" size="small">
-        <el-form-item label="Logo URL">
-          <el-input
-            v-model="tempConfig.logoUrl"
-            placeholder="输入Logo图片URL"
-          ></el-input>
-        </el-form-item>
-
         <el-form-item label="显示搜索框">
           <el-switch v-model="tempConfig.showSearch"></el-switch>
         </el-form-item>
@@ -160,7 +153,6 @@ export default {
     config: {
       type: Object,
       default: () => ({
-        logoUrl: "",
         showSearch: true,
         menuItems: [],
       }),
