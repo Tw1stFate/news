@@ -319,7 +319,6 @@ export default {
   border-bottom: none;
   background-color: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  z-index: 100;
 
   .nav-container {
     display: flex;
@@ -430,7 +429,6 @@ export default {
     background-color: #e6f2e6;
     border-top: 1px solid #d0e9d0;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    z-index: 99;
     padding-bottom: 20px;
     display: block;
     height: auto !important;
