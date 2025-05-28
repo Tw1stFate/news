@@ -22,7 +22,9 @@ export default class LayoutUtils {
     
     // 递归清理函数
     const clean = (node) => {
-      if (!node) return;
+      if (!node) {
+        return;
+      }
       
       // 如果节点有widget，清理其配置
       if (node.widget && node.widget.config) {
@@ -215,7 +217,9 @@ export default class LayoutUtils {
   static prepareImportedLayout(layoutTree) {
     // 递归处理布局树中的每个节点
     const processNode = (node, parentId = null) => {
-      if (!node) return;
+      if (!node) {
+        return;
+      }
       
       // 设置父节点ID（如果提供）
       if (parentId !== null) {
@@ -262,12 +266,16 @@ export default class LayoutUtils {
     
     // 递归修复节点样式
     const fixNodeStyles = (node) => {
-      if (!node) return;
+      if (!node) {
+        return;
+      }
       
       // 根据节点类型设置默认样式
       if (node.type === 'row') {
         // 行节点默认样式
-        if (!node.width) node.width = '100%';
+        if (!node.width) {
+          node.width = '100%';
+        }
       } else if (node.type === 'column') {
         // 列节点默认样式
         if (!node.span && !node.percentWidth) {
@@ -284,7 +292,9 @@ export default class LayoutUtils {
         }
         
         // 确保高度设置
-        if (!node.height) node.height = '100%';
+        if (!node.height) {
+          node.height = '100%';
+        }
       }
       
       // 递归处理子节点
