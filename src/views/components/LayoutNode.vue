@@ -118,7 +118,6 @@
 
           <!-- 悬停时显示的遮罩层 -->
           <div class="widget-overlay">
-            <div class="widget-name">{{ node.widget.name }}</div>
             <div class="widget-actions">
               <!-- 组件设置按钮 -->
               <el-button
@@ -135,7 +134,7 @@
                 size="small"
                 icon="el-icon-refresh"
                 @click.stop="selectWidget"
-                >选择样式
+                >重新选择
               </el-button>
               
               <!-- 移除组件按钮 -->
@@ -265,7 +264,7 @@ export default {
         style.overflow = "hidden";
         style.minHeight = "0";
       } else {
-        style.minHeight = "80px";
+        style.minHeight = "0px";
       }
       
       return style;
@@ -606,7 +605,6 @@ export default {
 
 // 组件预览
 .widget-preview {
-  min-height: 100px;
   height: 100%;
   background-color: #fff;
   border-radius: 4px;
@@ -633,13 +631,6 @@ export default {
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 10;
-
-    .widget-name {
-      color: #fff;
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
 
     .widget-actions {
       display: flex;
