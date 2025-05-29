@@ -1,5 +1,5 @@
 <template>
-  <div class="news-list-widget" :style="{ height: `${config.height}px` }">
+  <div class="news-list-widget">
     <div class="widget-header">
       <div class="title-area">
         <h3 class="category-title">{{ config.title || "行务要闻" }}</h3>
@@ -43,16 +43,6 @@
       @closed="handleDialogClosed"
     >
       <el-form :model="tempConfig" label-width="120px" size="small">
-        <el-form-item label="组件高度">
-          <el-input-number
-            v-model="tempConfig.height"
-            :min="200"
-            :max="600"
-            :step="10"
-          ></el-input-number>
-          <span class="form-tip">像素 (px)</span>
-        </el-form-item>
-
         <el-form-item label="标题">
           <el-input
             v-model="tempConfig.title"
@@ -109,7 +99,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        height: 330,
         title: "行务要闻",
         count: 7,
         showDate: true,
@@ -189,6 +178,7 @@ export default {
 <style lang="scss" scoped>
 .news-list-widget {
   width: 100%;
+  height: 100%;
   border-radius: 0;
   background: #fff;
   display: flex;

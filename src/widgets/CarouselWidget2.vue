@@ -10,7 +10,6 @@
             <el-carousel
               :interval="config.interval"
               :autoplay="config.autoplay"
-              :height="`100%`"
               indicator-position="none"
               ref="carousel"
               @change="handleChange"
@@ -77,16 +76,6 @@
       @closed="handleDialogClosed"
     >
       <el-form :model="tempConfig" label-width="120px" size="small">
-        <el-form-item label="轮播高度">
-          <el-input-number
-            v-model="tempConfig.height"
-            :min="200"
-            :max="600"
-            :step="10"
-          ></el-input-number>
-          <span class="form-tip">像素 (px)</span>
-        </el-form-item>
-
         <el-form-item label="自动播放">
           <el-switch v-model="tempConfig.autoplay"></el-switch>
         </el-form-item>
@@ -141,7 +130,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        height: 360,
         autoplay: true,
         interval: 5000,
         showTitle: true,
@@ -256,11 +244,11 @@ export default {
 <style lang="scss" scoped>
 .carousel-widget {
   width: 100%;
+  height: 100%;
   margin: 0 auto;
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-  height: v-bind("`100%`");
 }
 
 .loading-carousel {
@@ -273,9 +261,8 @@ export default {
 }
 
 .carousel-container {
-  height: 100%;
   display: flex;
-  background: #fff;
+  height: 100%;
 }
 
 .main-content {

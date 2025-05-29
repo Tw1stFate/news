@@ -1,5 +1,5 @@
 <template>
-  <div class="news-list-widget" :style="{ height: `${config.height}px` }">
+  <div class="news-list-widget">
     <div class="widget-header">
       <div class="title-area">
         <h3 class="category-title" ref="categoryTitle">
@@ -56,16 +56,6 @@
       @closed="handleDialogClosed"
     >
       <el-form :model="tempConfig" label-width="120px" size="small">
-        <el-form-item label="组件高度">
-          <el-input-number
-            v-model="tempConfig.height"
-            :min="200"
-            :max="600"
-            :step="10"
-          ></el-input-number>
-          <span class="form-tip">像素 (px)</span>
-        </el-form-item>
-
         <el-form-item label="标题">
           <el-input
             v-model="tempConfig.title"
@@ -118,7 +108,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        height: 400,
         title: "双轻业务",
         count: 4,
         categoryId: "finance",
@@ -225,13 +214,13 @@ export default {
 <style lang="scss" scoped>
 .news-list-widget {
   width: 100%;
-  border-radius: 0;
+  height: 100%;
+  border-radius: 4px;
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: none;
-  border: 1px solid #e5e5e5;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .loading-content {
@@ -290,8 +279,8 @@ export default {
 
 .widget-content {
   flex: 1;
-  display: flex;
   padding: 16px;
+  display: flex;
   overflow: hidden;
 }
 

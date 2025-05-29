@@ -24,7 +24,6 @@ const widgetTypes = {
     name: '轮播图样式1',
     component: CarouselWidget1,
     defaultConfig: {
-      height: 300,
       autoplay: true,
       interval: 5000,
       indicatorPosition: 'bottom-left',
@@ -41,7 +40,6 @@ const widgetTypes = {
     name: '轮播图样式2',
     component: CarouselWidget2,
     defaultConfig: {
-      height: 360,
       autoplay: true,
       interval: 5000,
       showTitle: true,
@@ -55,7 +53,6 @@ const widgetTypes = {
     name: '轮播图样式3',
     component: CarouselWidget3,
     defaultConfig: {
-      height: 360,
       autoplay: true,
       interval: 5000,
       showDate: true,
@@ -69,7 +66,6 @@ const widgetTypes = {
     name: '列表样式1',
     component: NewsListWidget1,
     defaultConfig: {
-      height: 400,
       title: '党建引领',
       count: 6,
       showDate: true,
@@ -83,7 +79,6 @@ const widgetTypes = {
     name: '列表样式2',
     component: NewsListWidget2,
     defaultConfig: {
-      height: 330,
       title: '行务要闻',
       count: 7,
       showDate: true,
@@ -97,7 +92,6 @@ const widgetTypes = {
     name: '列表样式3',
     component: NewsListWidget3,
     defaultConfig: {
-      height: 400,
       title: '双轻业务',
       count: 4,
       categoryId: '',   // 关联栏目ID

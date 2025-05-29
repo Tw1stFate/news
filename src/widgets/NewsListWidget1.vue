@@ -1,5 +1,5 @@
 <template>
-  <div class="news-list-widget" :style="{ height: `${config.height}px` }">
+  <div class="news-list-widget">
     <div class="widget-header">
       <div class="title-area">
         <div class="category-indicator"></div>
@@ -98,7 +98,6 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        height: 400,
         title: "党建引领",
         count: 6,
         showDate: true,
@@ -194,6 +193,7 @@ export default {
 <style lang="scss" scoped>
 .news-list-widget {
   width: 100%;
+  height: 100%;
   border-radius: 4px;
   background: #fff;
   display: flex;
