@@ -160,6 +160,8 @@ export default {
   },
   data() {
     return {
+      // 添加requiresConfig属性，表示该组件需要配置
+      requiresConfig: true,
       searchKeyword: "",
       showBranchMenu: false,
       branchList: [],
@@ -168,6 +170,7 @@ export default {
       searchDialogVisible: false,
       configDialogVisible: false,
       tempConfig: {},
+      configCallback: null,
     };
   },
   created() {
@@ -212,7 +215,8 @@ export default {
   },
   methods: {
     // 配置对话框方法
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
 
@@ -224,10 +228,14 @@ export default {
 
     handleDialogClosed() {
       this.configDialogVisible = false;
+      this.configCallback = null;
     },
 
     saveConfig() {
-      this.$root.$emit("widget-config-updated", "nav-bar", this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === "function") {
+        this.configCallback(this.tempConfig);
+      }
       this.configDialogVisible = false;
     },
 

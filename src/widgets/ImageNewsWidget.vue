@@ -40,7 +40,13 @@
       append-to-body
       @closed="handleDialogClosed"
     >
-      <el-form :model="tempConfig" label-width="100px" size="small">
+      <el-form 
+        :model="tempConfig" 
+        label-width="100px" 
+        size="small" 
+        ref="configForm"
+        :rules="formRules"
+      >
         <el-form-item label="标题">
           <el-input v-model="tempConfig.title"></el-input>
         </el-form-item>
@@ -57,17 +63,21 @@
           <el-switch v-model="tempConfig.description"></el-switch>
         </el-form-item>
 
-        <el-form-item label="内容分类">
-          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
-            <el-option label="生活方式" value="lifestyle"></el-option>
-            <el-option label="文化" value="culture"></el-option>
-            <el-option label="社会新闻" value="social"></el-option>
+        <el-form-item label="栏目" prop="categoryId" required>
+          <el-select v-model="tempConfig.categoryId" placeholder="选择栏目">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            >
+            </el-option>
           </el-select>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveConfig">确定</el-button>
+        <el-button type="primary" @click="validateAndSaveConfig">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -75,6 +85,7 @@
 
 <script>
 import api from "../services/api";
+import { mapState } from "vuex";
 
 export default {
   name: "ImageNewsWidget",
@@ -86,20 +97,35 @@ export default {
         title: "图文新闻",
         imagePosition: "left",
         description: true,
-        categoryId: "lifestyle",
+        categoryId: "",
         maxItems: 1,
       }),
     },
   },
   data() {
     return {
+      // 添加requiresConfig属性，表示该组件需要配置
+      requiresConfig: true,
       loading: true,
       newsItems: null,
       configDialogVisible: false,
       tempConfig: {},
+      configCallback: null,
+      // 添加表单验证规则
+      formRules: {
+        categoryId: [
+          { required: true, message: '请选择栏目', trigger: 'change' }
+        ]
+      }
     };
   },
   computed: {
+    ...mapState("column", ["columns"]),
+    
+    categories() {
+      return this.columns || [];
+    },
+    
     // 根据图片位置设置不同的 CSS 类
     positionClass() {
       return `image-${this.config.imagePosition}`;
@@ -136,7 +162,8 @@ export default {
     },
 
     // 新增：显示设置对话框的方法
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
@@ -144,11 +171,30 @@ export default {
     // 对话框关闭处理
     handleDialogClosed() {
       this.configDialogVisible = false;
+      this.configCallback = null;
+      // 重置表单验证
+      if (this.$refs.configForm) {
+        this.$refs.configForm.resetFields();
+      }
+    },
+
+    // 校验并保存配置
+    validateAndSaveConfig() {
+      this.$refs.configForm.validate((valid) => {
+        if (valid) {
+          this.saveConfig();
+        } else {
+          console.error("表单验证失败");
+        }
+      });
     },
 
     // 保存配置
     saveConfig() {
-      this.$root.$emit("widget-config-updated", "image-news", this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === "function") {
+        this.configCallback(this.tempConfig);
+      }
       this.configDialogVisible = false;
     },
   },

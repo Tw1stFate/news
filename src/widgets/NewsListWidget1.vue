@@ -43,7 +43,13 @@
       append-to-body
       @closed="handleDialogClosed"
     >
-      <el-form :model="tempConfig" label-width="100px" size="small">
+      <el-form 
+        :model="tempConfig" 
+        label-width="100px" 
+        size="small"
+        ref="configForm"
+        :rules="formRules"
+      >
         <el-form-item label="标题">
           <el-input
             v-model="tempConfig.title"
@@ -51,9 +57,21 @@
           ></el-input>
         </el-form-item>
 
+        <el-form-item label="栏目" prop="categoryId" required>
+          <el-select v-model="tempConfig.categoryId" placeholder="选择栏目">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="显示数量">
           <el-input-number
-            v-model="tempConfig.limit"
+            v-model="tempConfig.count"
             :min="1"
             :max="20"
             :step="1"
@@ -82,7 +100,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveConfig">确定</el-button>
+        <el-button type="primary" @click="validateAndSaveConfig">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -90,6 +108,7 @@
 
 <script>
 import api from "../services/api";
+import { mapState } from "vuex";
 
 export default {
   name: "NewsListWidget1",
@@ -101,13 +120,15 @@ export default {
         title: "党建引领",
         count: 6,
         showDate: true,
-        categoryId: "domestic",
+        categoryId: "",
         maxItems: 6,
       }),
     },
   },
   data() {
     return {
+      // 添加requiresConfig属性，表示该组件需要配置
+      requiresConfig: true,
       loading: true,
       newsItems: [],
       total: 0,
@@ -115,9 +136,21 @@ export default {
       configDialogVisible: false,
       tempConfig: {},
       configCallback: null,
+      // 添加表单验证规则
+      formRules: {
+        categoryId: [
+          { required: true, message: '请选择栏目', trigger: 'change' }
+        ]
+      }
     };
   },
   computed: {
+    ...mapState("column", ["columns"]),
+    
+    categories() {
+      return this.columns || [];
+    },
+    
     displayItems() {
       return this.newsItems.slice(0, this.config.count || 6);
     },
@@ -174,15 +207,26 @@ export default {
     handleDialogClosed() {
       this.configDialogVisible = false;
       this.configCallback = null;
+      // 重置表单验证
+      if (this.$refs.configForm) {
+        this.$refs.configForm.resetFields();
+      }
+    },
+    // 校验并保存配置
+    validateAndSaveConfig() {
+      this.$refs.configForm.validate((valid) => {
+        if (valid) {
+          this.saveConfig();
+        } else {
+          return false;
+        }
+      });
     },
     saveConfig() {
       // 如果有回调函数，则调用它并传递新配置
       if (typeof this.configCallback === "function") {
         this.configCallback(this.tempConfig);
       }
-
-      // 更新本地配置
-      this.config = JSON.parse(JSON.stringify(this.tempConfig));
 
       this.configDialogVisible = false;
     },

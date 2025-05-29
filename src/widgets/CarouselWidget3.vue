@@ -60,13 +60,19 @@
 
     <!-- 组件配置对话框 -->
     <el-dialog
-      title="图文轮播+标题列表组件配置"
+      title="轮播组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
       @closed="handleDialogClosed"
     >
-      <el-form :model="tempConfig" label-width="120px" size="small">
+      <el-form 
+        :model="tempConfig" 
+        label-width="100px" 
+        size="small"
+        ref="configForm"
+        :rules="formRules"
+      >
         <el-form-item label="自动播放">
           <el-switch v-model="tempConfig.autoplay"></el-switch>
         </el-form-item>
@@ -85,12 +91,15 @@
           <el-switch v-model="tempConfig.showDate"></el-switch>
         </el-form-item>
 
-        <el-form-item label="内容分类">
-          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
-            <el-option label="头条新闻" value="headlines"></el-option>
-            <el-option label="热点要闻" value="trending"></el-option>
-            <el-option label="社会新闻" value="social"></el-option>
-            <el-option label="国际新闻" value="international"></el-option>
+        <el-form-item label="栏目" prop="categoryId" required>
+          <el-select v-model="tempConfig.categoryId" placeholder="选择栏目">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            >
+            </el-option>
           </el-select>
         </el-form-item>
 
@@ -105,7 +114,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveConfig">确定</el-button>
+        <el-button type="primary" @click="validateAndSaveConfig">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -113,6 +122,7 @@
 
 <script>
 import api from "../services/api";
+import { mapState } from "vuex";
 
 export default {
   name: "CarouselWidget3",
@@ -124,21 +134,34 @@ export default {
         autoplay: true,
         interval: 5000,
         showDate: true,
-        categoryId: "headlines",
+        categoryId: "",
         maxItems: 5,
       }),
     },
   },
   data() {
     return {
+      requiresConfig: true,
       currentIndex: 0,
       loading: true,
       items: [],
       configDialogVisible: false,
       tempConfig: {},
+      configCallback: null,
+      formRules: {
+        categoryId: [
+          { required: true, message: '请选择栏目', trigger: 'change' }
+        ]
+      }
     };
   },
   computed: {
+    ...mapState("column", ["columns"]),
+    
+    categories() {
+      return this.columns || [];
+    },
+    
     currentItem() {
       return this.items[this.currentIndex] || {};
     },
@@ -189,16 +212,33 @@ export default {
         this.setActiveItem(index);
       }
     },
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.configDialogVisible = false;
+      this.configCallback = null;
+      // 重置表单验证
+      if (this.$refs.configForm) {
+        this.$refs.configForm.resetFields();
+      }
+    },
+    validateAndSaveConfig() {
+      this.$refs.configForm.validate((valid) => {
+        if (valid) {
+          this.saveConfig();
+        } else {
+          console.error("表单验证失败");
+        }
+      });
     },
     saveConfig() {
-      // 向父组件传递配置更新消息
-      this.$root.$emit("widget-config-updated", "carousel-3", this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === "function") {
+        this.configCallback(this.tempConfig);
+      }
       this.configDialogVisible = false;
     },
   },

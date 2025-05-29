@@ -36,18 +36,36 @@
 
     <!-- 组件配置对话框 -->
     <el-dialog
-      title="红标题+时间列表组件配置"
+      title="新闻列表组件配置"
       :visible.sync="configDialogVisible"
       width="500px"
       append-to-body
       @closed="handleDialogClosed"
     >
-      <el-form :model="tempConfig" label-width="120px" size="small">
+      <el-form 
+        :model="tempConfig" 
+        label-width="100px" 
+        size="small"
+        ref="configForm"
+        :rules="formRules"
+      >
         <el-form-item label="标题">
           <el-input
             v-model="tempConfig.title"
-            placeholder="请输入栏目标题"
+            placeholder="请输入标题"
           ></el-input>
+        </el-form-item>
+
+        <el-form-item label="栏目" prop="categoryId" required>
+          <el-select v-model="tempConfig.categoryId" placeholder="选择栏目">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            >
+            </el-option>
+          </el-select>
         </el-form-item>
 
         <el-form-item label="显示数量">
@@ -63,15 +81,6 @@
           <el-switch v-model="tempConfig.showDate"></el-switch>
         </el-form-item>
 
-        <el-form-item label="内容分类">
-          <el-select v-model="tempConfig.categoryId" placeholder="选择内容分类">
-            <el-option label="国内新闻" value="domestic"></el-option>
-            <el-option label="国际新闻" value="international"></el-option>
-            <el-option label="财经新闻" value="finance"></el-option>
-            <el-option label="科技新闻" value="technology"></el-option>
-          </el-select>
-        </el-form-item>
-
         <el-form-item label="最大获取数量">
           <el-input-number
             v-model="tempConfig.maxItems"
@@ -83,7 +92,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveConfig">确定</el-button>
+        <el-button type="primary" @click="validateAndSaveConfig">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -91,6 +100,7 @@
 
 <script>
 import api from "../services/api";
+import { mapState } from "vuex";
 
 export default {
   name: "NewsListWidget2",
@@ -102,20 +112,35 @@ export default {
         title: "行务要闻",
         count: 7,
         showDate: true,
-        categoryId: "domestic",
+        categoryId: "",
         maxItems: 7,
       }),
     },
   },
   data() {
     return {
+      // 添加requiresConfig属性，表示该组件需要配置
+      requiresConfig: true,
       loading: true,
       newsItems: [],
       configDialogVisible: false,
       tempConfig: {},
+      configCallback: null,
+      // 添加表单验证规则
+      formRules: {
+        categoryId: [
+          { required: true, message: '请选择栏目', trigger: 'change' }
+        ]
+      }
     };
   },
   computed: {
+    ...mapState("column", ["columns"]),
+    
+    categories() {
+      return this.columns || [];
+    },
+    
     displayItems() {
       return this.newsItems.slice(0, this.config.count || 7);
     },
@@ -159,16 +184,33 @@ export default {
     handleMoreClick() {
       this.$emit("more-click", this.config.categoryId || "domestic");
     },
-    showSettingDialog() {
+    showSettingDialog(callback) {
+      this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
     },
     handleDialogClosed() {
       this.tempConfig = {};
+      this.configCallback = null;
+      // 重置表单验证
+      if (this.$refs.configForm) {
+        this.$refs.configForm.resetFields();
+      }
+    },
+    validateAndSaveConfig() {
+      this.$refs.configForm.validate((valid) => {
+        if (valid) {
+          this.saveConfig();
+        } else {
+          console.error("表单验证失败");
+        }
+      });
     },
     saveConfig() {
-      // 向父组件传递配置更新消息
-      this.$root.$emit("widget-config-updated", "news-list-2", this.tempConfig);
+      // 如果有回调函数，则调用它并传递新配置
+      if (typeof this.configCallback === "function") {
+        this.configCallback(this.tempConfig);
+      }
       this.configDialogVisible = false;
     },
   },
