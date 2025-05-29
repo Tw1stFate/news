@@ -86,7 +86,6 @@ const PreviewRow = {
           flexDirection: "row",
           flexWrap: "nowrap",
           width: "100%",
-          gap: "16px",
           flex: "1"
         } : {
           flex: "1"
@@ -119,12 +118,12 @@ const PreviewRow = {
     // 渲染列
     renderColumn(h, column) {
       // 计算列宽度
-      const columnWidth = column.percentWidth || (column.span ? `${column.span * 10}%` : "100%");
+      let columnWidth = column.percentWidth || (column.span ? `${column.span * 10}%` : "100%");
       
       // 列样式
       const columnStyle = {
-        width: columnWidth,
-        flex: `0 0 ${columnWidth}`,
+        flex: columnWidth,
+        margin: "0 8px",
         display: "inline-block",
         verticalAlign: "top",
         height: column.height
@@ -414,7 +413,7 @@ export default {
       display: flex;
       width: 100%;
       height: 100%;
-      gap: 16px;
+      box-sizing: border-box;
     }
     
     .row-content {

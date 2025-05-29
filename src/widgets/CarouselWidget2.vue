@@ -387,6 +387,10 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    // 不显示滚动条
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     &::-webkit-scrollbar {
       width: 4px;
