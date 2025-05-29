@@ -50,7 +50,13 @@
       append-to-body
       @closed="handleDialogClosed"
     >
-      <el-form :model="tempConfig" label-width="100px" size="small">
+      <el-form 
+        :model="tempConfig" 
+        label-width="100px" 
+        size="small"
+        ref="configForm"
+        :rules="formRules"
+      >
         <el-form-item label="轮播间隔">
           <el-input-number
             v-model="tempConfig.interval"
@@ -69,7 +75,7 @@
           <el-switch v-model="tempConfig.showTitle"></el-switch>
         </el-form-item>
 
-        <el-form-item label="栏目选择">
+        <el-form-item label="栏目选择" prop="columnId" required>
           <el-select v-model="tempConfig.columnId" placeholder="选择栏目">
             <el-option
               v-for="column in columns"
@@ -92,7 +98,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveConfig">确定</el-button>
+        <el-button type="primary" @click="validateAndSaveConfig">确定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -126,6 +132,11 @@ export default {
       configDialogVisible: false,
       tempConfig: {},
       configCallback: null,
+      formRules: {
+        columnId: [
+          { required: true, message: '请选择栏目', trigger: 'change' }
+        ]
+      }
     };
   },
   computed: {
@@ -204,12 +215,43 @@ export default {
       // 关闭对话框
       this.configDialogVisible = false;
     },
+    // 校验并保存配置
+    validateAndSaveConfig() {
+      this.$refs.configForm.validate((valid) => {
+        if (valid) {
+          this.saveConfig();
+        } else {
+          return false;
+        }
+      });
+    },
     // 对话框关闭处理
     handleDialogClosed() {
       // 清空临时配置和回调
       this.tempConfig = {};
       this.configCallback = null;
+      // 重置表单验证
+      if (this.$refs.configForm) {
+        this.$refs.configForm.resetFields();
+      }
     },
+    
+    // 校验组件配置 (供外部调用)
+    validateConfig(config) {
+      // 校验结果
+      const result = {
+        valid: true,
+        message: ""
+      };
+      
+      // 只检查columnId是否已选择
+      if (!config.columnId) {
+        result.valid = false;
+        result.message = "请选择栏目";
+      }
+      
+      return result;
+    }
   },
 };
 </script>

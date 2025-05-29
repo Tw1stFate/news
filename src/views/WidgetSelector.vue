@@ -180,6 +180,21 @@ export default {
         return;
       }
 
+      // 获取组件实例，用于校验配置
+      const widgetComponent = this.$refs[`widget_${widget.type}_${this.selectedWidgetIndex}`][0];
+      
+      // 检查组件是否有校验方法
+      if (widgetComponent && typeof widgetComponent.validateConfig === 'function') {
+        // 使用组件的校验方法校验配置
+        const validationResult = widgetComponent.validateConfig(widget.config);
+        
+        // 如果校验不通过，显示设置dialog, 让用户填参数
+        if (!validationResult.valid) {
+          this.showWidgetSettings(widget, this.selectedWidgetIndex);
+          return;
+        }
+      }
+
       const node = this.findNode();
       const columnId = node && node.columnId ? node.columnId : null;
 
