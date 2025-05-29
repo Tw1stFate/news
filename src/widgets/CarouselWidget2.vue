@@ -10,7 +10,7 @@
             <el-carousel
               :interval="config.interval"
               :autoplay="config.autoplay"
-              :height="`${config.height}px`"
+              :height="`100%`"
               indicator-position="none"
               ref="carousel"
               @change="handleChange"
@@ -260,7 +260,7 @@ export default {
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-  height: v-bind("`${config.height}px`");
+  height: v-bind("`100%`");
 }
 
 .loading-carousel {
