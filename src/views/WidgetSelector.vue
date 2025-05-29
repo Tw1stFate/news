@@ -1,9 +1,9 @@
 <template>
   <el-dialog
     title="选择栏目样式"
-    :visible.sync="visible"
+    :visible="visible"
     width="80%"
-    :before-close="handleClose"
+    :before-close="closeDialog"
     class="widget-selector-dialog"
     :close-on-click-modal="false"
   >
@@ -25,17 +25,6 @@
               <div class="widget-container">
                 <div class="widget-header">
                   <h4>{{ widget.name }}</h4>
-                  <el-button
-                    v-if="
-                      selectedWidgetType === widget.type &&
-                      selectedWidgetIndex === index
-                    "
-                    type="primary"
-                    size="mini"
-                    icon="el-icon-setting"
-                    @click="showWidgetSettings(widget, index)"
-                    >设置</el-button
-                  >
                 </div>
                 <el-card
                   class="widget-card"
@@ -65,7 +54,7 @@
       </el-tabs>
     </div>
     <div slot="footer" class="dialog-footer">
-      <el-button @click="handleClose">取消</el-button>
+      <el-button @click="closeDialog">取消</el-button>
       <el-button
         type="primary"
         @click="confirmSelection"
@@ -129,36 +118,8 @@ export default {
       return WidgetRegistry.get(type);
     },
 
-    // 显示组件设置
-    showWidgetSettings(widget, index) {
-      // Get the component reference
-      const widgetComponent = this.$refs[`widget_${widget.type}_${index}`][0];
-
-      // Use the component's showSettingDialog method
-      if (
-        widgetComponent &&
-        typeof widgetComponent.showSettingDialog === "function"
-      ) {
-        widgetComponent.showSettingDialog((newConfig) => {
-          // 当组件配置更新时，将其同步到选中的组件
-          const categoryWidgets = this.getWidgetsByCategory(
-            this.activeWidgetCategory
-          );
-          const selectedWidget = categoryWidgets[this.selectedWidgetIndex];
-
-          if (selectedWidget) {
-            // 更新配置
-            selectedWidget.config = { ...newConfig };
-
-            // 更新后自动确认组件选择
-            this.confirmSelection();
-          }
-        });
-      }
-    },
-
-    // 关闭对话框
-    handleClose() {
+    // 关闭对话框并重置状态
+    closeDialog() {
       this.reset();
       this.$emit("update:visible", false);
       this.$emit("close");
@@ -180,36 +141,33 @@ export default {
         return;
       }
 
-      // 获取组件实例，用于校验配置
-      const widgetComponent = this.$refs[`widget_${widget.type}_${this.selectedWidgetIndex}`][0];
+      // 获取组件实例
+      const refKey = `widget_${widget.type}_${this.selectedWidgetIndex}`;
+      const widgetComponent = this.$refs[refKey] && this.$refs[refKey][0];
       
-      // 检查组件是否有校验方法
-      if (widgetComponent && typeof widgetComponent.validateConfig === 'function') {
-        // 使用组件的校验方法校验配置
-        const validationResult = widgetComponent.validateConfig(widget.config);
-        
-        // 如果校验不通过，显示设置dialog, 让用户填参数
-        if (!validationResult.valid) {
-          this.showWidgetSettings(widget, this.selectedWidgetIndex);
-          return;
-        }
+      // 检查组件是否需要设置参数并且有设置方法
+      if (
+        widgetComponent && 
+        widgetComponent.requiresConfig && 
+        typeof widgetComponent.showSettingDialog === "function"
+      ) {
+        // 显示设置对话框
+        widgetComponent.showSettingDialog((newConfig) => {
+          // 创建widget副本并更新配置
+          const widgetCopy = JSON.parse(JSON.stringify(widget));
+          widgetCopy.config = { ...newConfig };
+          
+          // 发送选中结果并关闭对话框
+          this.$emit("confirm", { widget: widgetCopy });
+          this.closeDialog();
+        });
+        return;
       }
-
-      const node = this.findNode();
-      const columnId = node && node.columnId ? node.columnId : null;
-
-      // 使用深拷贝确保组件配置不会被后续修改影响
+      
+      // 直接使用当前配置
       const widgetCopy = JSON.parse(JSON.stringify(widget));
-
-      this.$emit("confirm", {
-        nodeId: this.nodeId,
-        widgetType: this.selectedWidgetType,
-        columnId,
-        widget: widgetCopy,
-      });
-
-      this.reset();
-      this.$emit("update:visible", false);
+      this.$emit("confirm", { widget: widgetCopy });
+      this.closeDialog();
     },
 
     // 重置状态
@@ -217,54 +175,12 @@ export default {
       this.selectedWidgetType = null;
       this.selectedWidgetIndex = -1;
     },
-
-    // 查找当前节点
-    findNode() {
-      if (!this.nodeId) return null;
-
-      try {
-        // 尝试从Vuex中获取布局树
-        const layoutTree = this.$store.state.layout.layoutTree;
-
-        const findNodeById = (node, id) => {
-          if (!node) return null;
-          if (node.id === id) return node;
-
-          if (node.children) {
-            for (const child of node.children) {
-              const found = findNodeById(child, id);
-              if (found) return found;
-            }
-          }
-
-          return null;
-        };
-
-        return findNodeById(layoutTree, this.nodeId);
-      } catch (e) {
-        console.error("找不到节点:", e);
-        return null;
-      }
-    },
   },
   watch: {
     visible(val) {
       if (val) {
         // 默认选中第一个分类
         this.activeWidgetCategory = this.widgetCategories[0] || "轮播图";
-
-        // 当打开对话框时，如果节点已有关联的组件，自动选中
-        const node = this.findNode();
-        if (node && node.widget) {
-          this.selectedWidgetType = node.widget.type;
-          // Find the index of this widget type in the current category
-          const categoryWidgets = this.getWidgetsByCategory(
-            this.activeWidgetCategory
-          );
-          this.selectedWidgetIndex = categoryWidgets.findIndex(
-            (w) => w.type === node.widget.type
-          );
-        }
       } else {
         this.reset();
       }

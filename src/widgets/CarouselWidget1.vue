@@ -126,6 +126,8 @@ export default {
   },
   data() {
     return {
+      // 添加requiresConfig属性，表示该组件需要配置
+      requiresConfig: true,
       currentIndex: 0,
       loading: true,
       items: [],
@@ -227,6 +229,7 @@ export default {
     },
     // 对话框关闭处理
     handleDialogClosed() {
+      console.log("handleDialogClosed");
       // 清空临时配置和回调
       this.tempConfig = {};
       this.configCallback = null;

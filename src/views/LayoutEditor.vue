@@ -260,7 +260,8 @@ export default {
     
     // 处理组件选择确认
     handleWidgetConfirm(data) {
-      const { nodeId, widget, columnId } = data;
+      const { widget } = data;
+      const nodeId = this.selectedNodeId;
       
       // 使用Vue.set确保响应式更新
       const node = this.findNodeById(this.rootNode, nodeId);
@@ -271,8 +272,6 @@ export default {
           this.$message.error(`组件类型 "${widget.type}" 未注册，无法使用`);
           return;
         }
-        
-        const column = this.columns.find((c) => c.id === columnId);
         
         // 深拷贝组件对象
         const widgetCopy = JSON.parse(JSON.stringify(widget));
@@ -287,8 +286,6 @@ export default {
         
         // 使用Vue的响应式更新机制
         this.$set(node, "widget", widgetCopy);
-        this.$set(node, "columnId", columnId);
-        this.$set(node, "columnName", column ? column.name : "");
         this.$set(node, "hasWidget", true); // 明确标记有组件
         
         // 创建新的根节点引用来触发完整更新
@@ -493,47 +490,31 @@ export default {
       }
     },
 
-    // 修复导入的布局，确保组件和栏目引用正确
+    // 修复导入的布局，确保组件引用正确
     repairImportedLayout(layoutTree) {
       const processNode = (node) => {
         // 检查节点是否有组件
-      if (node.widget) {
+        if (node.widget) {
           const component = WidgetRegistry.get(node.widget.type);
           if (!component) {
             // 组件不存在，清除组件相关属性
             console.warn(
               `导入的布局包含未知组件类型: ${node.widget.type}，已清除`
             );
-          delete node.widget;
-            delete node.columnId;
-            delete node.columnName;
-          delete node.hasWidget;
-        } else {
+            delete node.widget;
+            delete node.hasWidget;
+          } else {
             // 组件存在，确保hasWidget属性设置
             node.hasWidget = true;
-          
-          // 检查关联的栏目是否存在
-            if (node.columnId) {
-              const existingColumn = this.columns.find(
-                (c) => c.id === node.columnId
-              );
-              if (!existingColumn) {
-                // 栏目不存在，清除columnId但保留组件
-                console.warn(
-                  `导入的布局关联了未知栏目ID: ${node.columnId}，已清除`
-                );
-                delete node.columnId;
-                delete node.columnName;
-            } else {
-              // 更新栏目名称，确保与当前系统匹配
-                node.columnName = existingColumn.name;
-              }
-            }
+          }
         }
-      }
+        
+        // 移除旧版本可能存在的不必要属性
+        if ('columnId' in node) delete node.columnId;
+        if ('columnName' in node) delete node.columnName;
       
-      // 递归处理子节点
-      if (node.children && node.children.length > 0) {
+        // 递归处理子节点
+        if (node.children && node.children.length > 0) {
           node.children.forEach((child) => processNode(child));
         }
       };
