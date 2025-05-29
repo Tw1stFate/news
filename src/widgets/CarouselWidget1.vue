@@ -229,7 +229,6 @@ export default {
     },
     // 对话框关闭处理
     handleDialogClosed() {
-      console.log("handleDialogClosed");
       // 清空临时配置和回调
       this.tempConfig = {};
       this.configCallback = null;
@@ -237,23 +236,6 @@ export default {
       if (this.$refs.configForm) {
         this.$refs.configForm.resetFields();
       }
-    },
-    
-    // 校验组件配置 (供外部调用)
-    validateConfig(config) {
-      // 校验结果
-      const result = {
-        valid: true,
-        message: ""
-      };
-      
-      // 只检查columnId是否已选择
-      if (!config.columnId) {
-        result.valid = false;
-        result.message = "请选择栏目";
-      }
-      
-      return result;
     }
   },
 };
