@@ -262,6 +262,7 @@ export default {
 <style lang="scss" scoped>
 .carousel-widget {
   width: 100%;
+  min-height: 150px;
   height: 100%;
   margin: 0 auto;
   border-radius: 4px;

@@ -201,7 +201,6 @@ export default {
     .el-dialog__body {
       flex: 1;
       overflow: auto;
-      padding: 20px;
     }
 
     .el-dialog__header {
@@ -258,6 +257,11 @@ export default {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
 
+      // 移除el-card的内边距
+      ::v-deep .el-card__body {
+        padding: 0;
+      }
+
       .preview-area {
         height: 180px;
         overflow: hidden;
@@ -266,10 +270,10 @@ export default {
         position: relative;
         pointer-events: none; // 阻止点击事件，使组件不可交互
 
-        .preview-component {
-          transform: scale(0.8);
-          transform-origin: top center;
-        }
+        // .preview-component {
+        //   transform: scale(0.8);
+        //   transform-origin: top center;
+        // }
       }
     }
 
