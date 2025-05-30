@@ -5,7 +5,7 @@
     </div>
     <template v-else-if="items && items.length > 0">
       <el-carousel
-        :interval="config.interval"
+        :interval="config.interval * 1000"
         :autoplay="config.autoplay"
         indicator-position="none"
         ref="carousel"
@@ -19,9 +19,9 @@
       </el-carousel>
 
       <!-- 底部控制栏 -->
-      <div class="carousel-controls">
+      <div class="carousel-controls" :class="{ hidden: !shouldShowControls }">
         <!-- 指示器 -->
-        <div class="carousel-indicators">
+        <div class="carousel-indicators" v-if="config.showIndicators">
           <span
             v-for="(_, index) in items"
             :key="index"
@@ -60,11 +60,11 @@
         <el-form-item label="轮播间隔">
           <el-input-number
             v-model="tempConfig.interval"
-            :min="1000"
-            :max="10000"
-            :step="500"
+            :min="1"
+            :max="20"
+            :step="1"
           ></el-input-number>
-          <span class="form-tip">毫秒</span>
+          <span class="form-tip">秒</span>
         </el-form-item>
 
         <el-form-item label="自动播放">
@@ -73,6 +73,10 @@
 
         <el-form-item label="显示标题">
           <el-switch v-model="tempConfig.showTitle"></el-switch>
+        </el-form-item>
+
+        <el-form-item label="显示指示器">
+          <el-switch v-model="tempConfig.showIndicators"></el-switch>
         </el-form-item>
 
         <el-form-item label="栏目选择" prop="columnId" required>
@@ -117,8 +121,9 @@ export default {
       required: true,
       default: () => ({
         autoplay: true,
-        interval: 5000,
+        interval: 5,
         showTitle: true,
+        showIndicators: true,
         columnId: "",
         maxItems: 5,
       }),
@@ -147,6 +152,10 @@ export default {
     currentItem() {
       return this.items[this.currentIndex] || {};
     },
+    
+    shouldShowControls() {
+      return this.config.showTitle || this.config.showIndicators;
+    }
   },
   watch: {
     // 当配置变化时，重新获取数据
@@ -276,6 +285,14 @@ export default {
   padding: 0 20px;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
   z-index: 10;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s, visibility 0.3s;
+  
+  &.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 .carousel-indicators {

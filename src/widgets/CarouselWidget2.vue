@@ -8,7 +8,7 @@
         <div class="main-content">
           <div class="carousel-main">
             <el-carousel
-              :interval="config.interval"
+              :interval="config.interval * 1000"
               :autoplay="config.autoplay"
               indicator-position="none"
               ref="carousel"
@@ -89,11 +89,11 @@
         <el-form-item label="轮播间隔" v-if="tempConfig.autoplay">
           <el-input-number
             v-model="tempConfig.interval"
-            :min="1000"
-            :max="10000"
-            :step="500"
+            :min="1"
+            :max="20"
+            :step="1"
           ></el-input-number>
-          <span class="form-tip">毫秒</span>
+          <span class="form-tip">秒</span>
         </el-form-item>
 
         <el-form-item label="显示标题">
@@ -141,7 +141,7 @@ export default {
       required: true,
       default: () => ({
         autoplay: true,
-        interval: 5000,
+        interval: 5,
         showTitle: true,
         categoryId: "",
         maxItems: 5,

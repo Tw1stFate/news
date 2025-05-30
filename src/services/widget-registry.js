@@ -25,7 +25,8 @@ const widgetTypes = {
     component: CarouselWidget1,
     defaultConfig: {
       autoplay: true,
-      interval: 5000,
+      interval: 5,
+      showIndicators: true,
       indicatorPosition: 'bottom-left',
       activeIndicatorWidth: 20,
       showTitle: true,
@@ -41,7 +42,8 @@ const widgetTypes = {
     component: CarouselWidget2,
     defaultConfig: {
       autoplay: true,
-      interval: 5000,
+      interval: 5,
+      showIndicators: true,
       showTitle: true,
       categoryId: '', // 关联栏目ID
       maxItems: 5              // 最大加载数量
@@ -54,7 +56,8 @@ const widgetTypes = {
     component: CarouselWidget3,
     defaultConfig: {
       autoplay: true,
-      interval: 5000,
+      interval: 5,
+      showIndicators: true,
       showDate: true,
       categoryId: '', // 关联栏目ID
       maxItems: 5              // 最大加载数量
