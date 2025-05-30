@@ -69,67 +69,13 @@
     <el-dialog
       title="导航栏组件配置"
       :visible.sync="configDialogVisible"
-      width="600px"
+      width="400px"
       append-to-body
       @closed="handleDialogClosed"
     >
       <el-form :model="tempConfig" label-width="100px" size="small">
         <el-form-item label="显示搜索框">
           <el-switch v-model="tempConfig.showSearch"></el-switch>
-        </el-form-item>
-
-        <el-form-item label="菜单项">
-          <div
-            v-for="(item, index) in tempConfig.menuItems"
-            :key="index"
-            class="menu-item-config"
-          >
-            <div class="menu-item-form">
-              <el-input
-                v-model="item.label"
-                placeholder="菜单标签"
-                size="mini"
-                style="width: 120px"
-              ></el-input>
-              <el-input
-                v-model="item.url"
-                placeholder="URL"
-                size="mini"
-                style="width: 200px"
-                v-if="!item.dropdown"
-              ></el-input>
-              <el-select
-                v-model="item.target"
-                size="mini"
-                style="width: 100px"
-                v-if="!item.dropdown"
-              >
-                <el-option label="当前窗口" value="_self"></el-option>
-                <el-option label="新窗口" value="_blank"></el-option>
-              </el-select>
-              <el-checkbox
-                v-model="item.dropdown"
-                @change="handleDropdownChange(item)"
-                >下拉菜单</el-checkbox
-              >
-              <el-checkbox v-model="item.active">激活</el-checkbox>
-              <el-button
-                type="danger"
-                size="mini"
-                icon="el-icon-delete"
-                @click="removeMenuItem(index)"
-              ></el-button>
-            </div>
-          </div>
-          <div class="add-menu-item">
-            <el-button
-              type="primary"
-              size="small"
-              icon="el-icon-plus"
-              @click="addMenuItem"
-              >添加菜单项</el-button
-            >
-          </div>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -153,8 +99,7 @@ export default {
     config: {
       type: Object,
       default: () => ({
-        showSearch: true,
-        menuItems: [],
+        showSearch: true
       }),
     },
   },
@@ -166,20 +111,7 @@ export default {
       showBranchMenu: false,
       branchList: [],
       loading: false,
-      mainMenuItems: [],
-      searchDialogVisible: false,
-      configDialogVisible: false,
-      tempConfig: {},
-      configCallback: null,
-    };
-  },
-  created() {
-    // 加载菜单项数据
-    if (this.config.menuItems && this.config.menuItems.length) {
-      this.mainMenuItems = this.config.menuItems;
-    } else {
-      // 默认菜单项
-      this.mainMenuItems = [
+      mainMenuItems: [
         {
           label: "集团门户",
           url: "https://www.example.com/group",
@@ -200,9 +132,14 @@ export default {
           target: "_blank",
           active: false,
         },
-      ];
-    }
-
+      ],
+      searchDialogVisible: false,
+      configDialogVisible: false,
+      tempConfig: {},
+      configCallback: null,
+    };
+  },
+  created() {
     // 预加载分行数据
     this.loadBranchData();
 
@@ -219,11 +156,6 @@ export default {
       this.configCallback = callback;
       this.configDialogVisible = true;
       this.tempConfig = JSON.parse(JSON.stringify(this.config));
-
-      // 确保menuItems存在
-      if (!this.tempConfig.menuItems || !this.tempConfig.menuItems.length) {
-        this.tempConfig.menuItems = [...this.mainMenuItems];
-      }
     },
 
     handleDialogClosed() {
@@ -239,45 +171,6 @@ export default {
       this.configDialogVisible = false;
     },
 
-    addMenuItem() {
-      this.tempConfig.menuItems.push({
-        label: "新菜单项",
-        url: "#",
-        target: "_self",
-        active: false,
-        dropdown: false,
-      });
-    },
-
-    removeMenuItem(index) {
-      this.tempConfig.menuItems.splice(index, 1);
-    },
-
-    handleDropdownChange(item) {
-      if (item.dropdown) {
-        // 如果设为下拉菜单，清除url和target
-        item.url = "";
-        item.target = "";
-      } else {
-        // 如果取消下拉菜单，设置默认值
-        item.url = "#";
-        item.target = "_self";
-      }
-    },
-
-    // 现有方法
-    async loadBranchData() {
-      // 预加载分行数据，但不显示
-      this.loading = true;
-      try {
-        this.branchList = await api.getBranchList();
-      } catch (error) {
-        console.error("加载分行数据失败:", error);
-        this.branchList = [];
-      } finally {
-        this.loading = false;
-      }
-    },
     handleMainMenuClick(item, event) {
       if (item.dropdown) {
         this.showBranchMenu = !this.showBranchMenu;
@@ -306,6 +199,18 @@ export default {
       // 如果点击的不是本组件内的元素，关闭下拉菜单
       if (this.showBranchMenu && !this.$el.contains(event.target)) {
         this.showBranchMenu = false;
+      }
+    },
+    async loadBranchData() {
+      // 预加载分行数据，但不显示
+      this.loading = true;
+      try {
+        this.branchList = await api.getBranchList();
+      } catch (error) {
+        console.error("加载分行数据失败:", error);
+        this.branchList = [];
+      } finally {
+        this.loading = false;
       }
     },
   },
