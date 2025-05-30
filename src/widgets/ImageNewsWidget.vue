@@ -2,17 +2,7 @@
   <div class="image-news-widget">
     <h3 class="widget-title">{{ config.title }}</h3>
     <div v-if="loading" class="loading">
-      <el-skeleton animated>
-        <template slot="template">
-          <el-skeleton-item
-            variant="image"
-            style="width: 100%; height: 200px"
-          />
-          <el-skeleton-item variant="p" style="width: 50%" />
-          <el-skeleton-item variant="text" style="width: 100%" />
-          <el-skeleton-item variant="text" style="width: 100%" />
-        </template>
-      </el-skeleton>
+      <div class="simple-loading">加载中...</div>
     </div>
     <div
       v-else-if="newsItems && newsItems.length > 0"
@@ -294,6 +284,15 @@ export default {
 }
 
 .loading {
-  padding: 20px 0;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.simple-loading {
+  font-size: 14px;
+  color: #909399;
 }
 </style>

@@ -11,7 +11,7 @@ const api = {
     return new Promise(resolve => {
       setTimeout(() => {
         resolve(mockColumns);
-      }, 300);
+      }, 1500); // 增加延迟时间
     });
   },
 
@@ -24,7 +24,7 @@ const api = {
     return new Promise(resolve => {
       setTimeout(() => {
         resolve(mockBranchList);
-      }, 300);
+      }, 1500); // 增加延迟时间
     });
   },
   
@@ -47,7 +47,7 @@ const api = {
           mockNewsData;
         
         resolve(shuffled.slice(0, limit));
-      }, 300);
+      }, 1500); // 增加延迟时间，更明显地展示加载状态
     });
   },
   

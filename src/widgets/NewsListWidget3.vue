@@ -18,7 +18,7 @@
     </div>
 
     <div v-if="loading" class="loading-content">
-      <el-skeleton :rows="config.maxItems || 4" animated />
+      <div class="simple-loading">加载中...</div>
     </div>
 
     <div class="widget-content" v-else-if="newsItems && newsItems.length > 0">
@@ -263,8 +263,16 @@ export default {
 }
 
 .loading-content {
-  flex: 1;
-  padding: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.simple-loading {
+  font-size: 14px;
+  color: #909399;
 }
 
 .widget-header {

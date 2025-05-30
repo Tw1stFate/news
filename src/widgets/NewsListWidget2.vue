@@ -10,7 +10,7 @@
     </div>
 
     <div v-if="loading" class="loading-list">
-      <el-skeleton :rows="config.maxItems || 7" animated />
+      <div class="simple-loading">加载中...</div>
     </div>
 
     <div class="news-list" v-else-if="newsItems && newsItems.length > 0">
@@ -275,8 +275,16 @@ export default {
 }
 
 .loading-list {
-  flex: 1;
-  padding: 12px 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.simple-loading {
+  font-size: 14px;
+  color: #909399;
 }
 
 .news-list {

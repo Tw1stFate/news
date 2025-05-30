@@ -10,7 +10,11 @@
       </div>
     </div>
 
-    <div class="news-list" v-loading="loading" v-if="newsItems && newsItems.length > 0">
+    <div v-if="loading" class="loading-list">
+      <div class="simple-loading">加载中...</div>
+    </div>
+
+    <div class="news-list" v-else-if="newsItems && newsItems.length > 0">
       <div
         v-for="(item, index) in displayItems"
         :key="index"
@@ -27,7 +31,7 @@
       </div>
     </div>
 
-    <div v-else-if="!loading" class="empty-list">
+    <div v-else class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
 
@@ -288,6 +292,19 @@ export default {
       font-size: 12px;
     }
   }
+}
+
+.loading-list {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.simple-loading {
+  font-size: 14px;
+  color: #909399;
 }
 
 .news-list {

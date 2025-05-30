@@ -1,7 +1,7 @@
 <template>
   <div class="carousel-widget">
     <div v-if="loading" class="loading-carousel">
-      <el-skeleton animated :rows="1" style="height: 100%" />
+      <div class="simple-loading">加载中...</div>
     </div>
     <template v-else-if="items && items.length > 0">
       <el-carousel
@@ -325,6 +325,14 @@ export default {
   height: 100%;
   padding: 10px;
   background-color: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simple-loading {
+  font-size: 14px;
+  color: #909399;
 }
 
 :deep(.el-carousel__container) {
