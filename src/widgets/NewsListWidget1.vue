@@ -10,11 +10,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-list">
-      <el-skeleton :rows="config.maxItems || 6" animated />
-    </div>
-
-    <div class="news-list" v-else-if="newsItems && newsItems.length > 0">
+    <div class="news-list" v-loading="loading" v-if="newsItems && newsItems.length > 0">
       <div
         v-for="(item, index) in displayItems"
         :key="index"
@@ -31,7 +27,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-list">
+    <div v-else-if="!loading" class="empty-list">
       <el-empty description="暂无数据" :image-size="80"></el-empty>
     </div>
 
@@ -292,11 +288,6 @@ export default {
       font-size: 12px;
     }
   }
-}
-
-.loading-list {
-  flex: 1;
-  padding: 12px 16px;
 }
 
 .news-list {

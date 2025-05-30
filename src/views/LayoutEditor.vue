@@ -6,7 +6,7 @@
         <h2>新闻门户布局编辑器</h2>
         </div>
         <div class="right-area">
-          <el-button-group class="action-group">
+          <el-button-group>
             <el-button
               type="primary"
               icon="el-icon-check"
@@ -19,7 +19,7 @@
             >
           </el-button-group>
           
-          <el-button-group class="action-group">
+          <el-button-group>
             <el-button type="info" icon="el-icon-download" @click="exportLayout"
               >导出</el-button
             >
@@ -783,16 +783,6 @@ export default {
         overflow-x: auto;
         max-width: calc(100% - 250px);
         justify-content: flex-end;
-        
-        .action-group {
-          flex-shrink: 0;
-          
-          .el-button span {
-            @media (max-width: 768px) {
-              display: none;
-            }
-          }
-        }
       }
     }
   }
