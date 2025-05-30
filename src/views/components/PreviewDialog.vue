@@ -341,17 +341,24 @@ export default {
     .preview-info {
       display: flex;
       align-items: center;
-      gap: 10px;
       color: #409eff;
 
       i {
         font-size: 18px;
+        margin-right: 10px;
       }
     }
     
     .preview-actions {
       display: flex;
-      gap: 10px;
+      
+      > * {
+        margin-right: 10px;
+        
+        &:last-child {
+          margin-right: 0;
+        }
+      }
     }
   }
 
@@ -420,7 +427,14 @@ export default {
       display: flex;
       flex-direction: column;
       width: 100%;
-      gap: 16px;
+      
+      > * {
+        margin-bottom: 16px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
     }
   }
   

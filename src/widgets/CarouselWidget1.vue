@@ -281,7 +281,6 @@ export default {
 .carousel-indicators {
   display: flex;
   align-items: center;
-  gap: 8px;
 
   .indicator {
     width: 8px;
@@ -290,6 +289,11 @@ export default {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-right: 8px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
 
     &.active {
       background: #fff;

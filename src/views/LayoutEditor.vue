@@ -778,11 +778,18 @@ export default {
       .right-area {
         display: flex;
         align-items: center;
-        gap: 12px;
         flex-wrap: nowrap;
         overflow-x: auto;
         max-width: calc(100% - 250px);
         justify-content: flex-end;
+        
+        > * {
+          margin-right: 12px;
+          
+          &:last-child {
+            margin-right: 0;
+          }
+        }
       }
     }
   }
@@ -811,11 +818,11 @@ export default {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 0px;
 
     .el-icon-s-grid {
       font-size: 60px;
       color: #909399;
+      margin-bottom: 10px;
     }
   }
   

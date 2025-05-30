@@ -292,7 +292,10 @@ export default {
 .dialog-footer {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  
+  button {
+    margin: 0 5px;
+  }
 }
 
 // 响应式调整

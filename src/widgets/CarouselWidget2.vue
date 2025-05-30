@@ -433,7 +433,7 @@ export default {
     padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    
     // 不显示滚动条
     &::-webkit-scrollbar {
       display: none;
@@ -462,6 +462,11 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
     flex-shrink: 0;
+    margin-bottom: 8px; // 替代gap属性
+    
+    &:last-child {
+      margin-bottom: 0; // 最后一个元素不需要底部边距
+    }
 
     img {
       width: 100%;

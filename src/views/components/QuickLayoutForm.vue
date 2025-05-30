@@ -177,22 +177,34 @@ export default {
     display: flex;
     flex-wrap: wrap;
     margin-bottom: 15px;
-    gap: 20px;
 
     .form-group {
       flex: 1;
       min-width: 180px;
       max-width: calc(33.33% - 14px);
+      margin-right: 20px;
+      
+      &:last-child {
+        margin-right: 0;
+      }
 
       @media (max-width: 768px) {
         min-width: 100%;
         max-width: 100%;
+        margin-right: 0;
       }
     }
 
     @media (max-width: 600px) {
       flex-direction: column;
-      gap: 15px;
+      
+      .form-group {
+        margin-bottom: 15px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
     }
   }
 
@@ -205,7 +217,6 @@ export default {
       min-width: 55px;
       display: flex;
       align-items: center;
-      gap: 5px;
       margin-right: 10px;
 
       label {
@@ -213,6 +224,7 @@ export default {
         color: #606266;
         font-size: 13px;
         white-space: nowrap;
+        margin-right: 5px;
       }
 
       .el-icon-question {
@@ -249,8 +261,11 @@ export default {
   .form-actions {
     display: flex;
     justify-content: center;
-    gap: 10px;
     margin-top: 15px;
+    
+    button {
+      margin: 0 5px;
+    }
   }
 }
 </style>

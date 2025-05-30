@@ -451,12 +451,11 @@ export default {
       .hot-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
 
         .history-item,
         .hot-item {
-          margin-right: 0;
-          margin-bottom: 0;
+          margin-right: 12px;
+          margin-bottom: 12px;
           cursor: pointer;
           padding: 8px 15px;
           font-size: 14px;
@@ -567,10 +566,10 @@ export default {
         align-items: center;
         margin-bottom: 20px;
         flex-wrap: wrap;
-        gap: 10px;
 
         h3 {
           margin: 0;
+          margin-right: 10px;
           font-size: 16px;
           color: #333;
           font-weight: 600;
@@ -654,12 +653,12 @@ export default {
               font-size: 13px;
               color: #999;
               flex-wrap: wrap;
-              gap: 15px;
 
               .result-date,
               .result-views {
                 display: flex;
                 align-items: center;
+                margin-right: 15px;
 
                 i {
                   margin-right: 5px;

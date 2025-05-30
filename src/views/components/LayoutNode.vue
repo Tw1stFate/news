@@ -489,25 +489,32 @@ export default {
   // 控制区域
   .node-controls {
     display: flex;
-    gap: 8px;
     align-items: center;
+    
+    > * {
+      margin-right: 8px;
+    }
 
     // 行设置区域
     .row-settings {
       display: flex;
       align-items: center;
-      gap: 15px;
       margin-right: 10px;
 
       .setting-item {
         display: flex;
         align-items: center;
-        gap: 8px;
+        margin-right: 15px;
+        
+        &:last-child {
+          margin-right: 0;
+        }
 
         .setting-label {
           font-size: 13px;
           color: #606266;
           white-space: nowrap;
+          margin-right: 8px;
         }
 
         .el-input {
@@ -635,10 +642,10 @@ export default {
 
     .widget-actions {
       display: flex;
-      gap: 10px;
 
       .el-button {
         border-radius: 4px;
+        margin: 0 5px;
       }
     }
   }

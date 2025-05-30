@@ -368,7 +368,6 @@ export default {
     .title-content {
       display: flex;
       flex-direction: column;
-      gap: 4px;
     }
 
     .title-text {
@@ -378,6 +377,7 @@ export default {
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
       overflow: hidden;
+      margin-bottom: 4px;
     }
 
     .title-date {
